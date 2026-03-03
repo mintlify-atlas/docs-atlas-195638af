@@ -1,0 +1,178 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "React Native HealthKit",
+  "projectDescription": "TypeScript-first React Native bindings for Apple HealthKit with full type safety and Promise support",
+  "theme": "palm",
+  "primaryColor": "#FF2D55",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "core-concepts/authorization",
+              "core-concepts/data-types",
+              "core-concepts/units",
+              "core-concepts/background-delivery"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/reading-data",
+              "guides/writing-data",
+              "guides/subscriptions",
+              "guides/workouts",
+              "guides/statistics",
+              "guides/anchors",
+              "guides/migration-v9"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Core",
+            "pages": [
+              "api/core/authorization",
+              "api/core/availability",
+              "api/core/background-delivery",
+              "api/core/preferred-units"
+            ]
+          },
+          {
+            "group": "Quantity Types",
+            "pages": [
+              "api/quantity/query-samples",
+              "api/quantity/save-sample",
+              "api/quantity/statistics",
+              "api/quantity/identifiers"
+            ]
+          },
+          {
+            "group": "Category Types",
+            "pages": [
+              "api/category/query-samples",
+              "api/category/save-sample",
+              "api/category/identifiers"
+            ]
+          },
+          {
+            "group": "Workouts",
+            "pages": [
+              "api/workouts/query",
+              "api/workouts/save",
+              "api/workouts/routes"
+            ]
+          },
+          {
+            "group": "Correlations",
+            "pages": [
+              "api/correlations/query",
+              "api/correlations/save"
+            ]
+          },
+          {
+            "group": "Characteristics",
+            "pages": [
+              "api/characteristics/biological-sex",
+              "api/characteristics/blood-type",
+              "api/characteristics/date-of-birth",
+              "api/characteristics/fitzpatrick-skin-type",
+              "api/characteristics/wheelchair-use"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api/advanced/electrocardiogram",
+              "api/advanced/heartbeat-series",
+              "api/advanced/state-of-mind",
+              "api/advanced/medication"
+            ]
+          },
+          {
+            "group": "React Hooks",
+            "pages": [
+              "api/hooks/use-healthkit-authorization",
+              "api/hooks/use-is-health-data-available",
+              "api/hooks/use-most-recent-quantity-sample",
+              "api/hooks/use-most-recent-category-sample",
+              "api/hooks/use-most-recent-workout",
+              "api/hooks/use-statistics-for-quantity",
+              "api/hooks/use-subscribe-to-changes",
+              "api/hooks/use-sources"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/query-options",
+              "api/types/samples",
+              "api/types/units"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Full TypeScript support with type-safe mappings to HealthKit APIs",
+    "100+ quantity types, 63 category types, and 75+ workout activity types",
+    "React Hooks for declarative data fetching and subscriptions",
+    "HealthKit anchor queries for efficient data synchronization",
+    "Background delivery and real-time change notifications",
+    "Support for workouts, correlations, electrocardiograms, and clinical data",
+    "Built on react-native-nitro-modules for optimal performance"
+  ],
+  "publicApiSurface": [
+    "requestAuthorization",
+    "authorizationStatusFor",
+    "isHealthDataAvailable",
+    "queryQuantitySamples",
+    "queryQuantitySamplesWithAnchor",
+    "queryCategorySamples",
+    "queryWorkoutSamples",
+    "saveQuantitySample",
+    "saveCategorySample",
+    "saveWorkoutSample",
+    "saveCorrelationSample",
+    "queryStatisticsForQuantity",
+    "queryStatisticsCollectionForQuantity",
+    "subscribeToChanges",
+    "enableBackgroundDelivery",
+    "disableBackgroundDelivery",
+    "getBiologicalSex",
+    "getBloodType",
+    "getDateOfBirth",
+    "getPreferredUnits",
+    "deleteObjects",
+    "useHealthkitAuthorization",
+    "useMostRecentQuantitySample",
+    "useMostRecentCategorySample",
+    "useMostRecentWorkout",
+    "useStatisticsForQuantity",
+    "useSubscribeToChanges",
+    "useIsHealthDataAvailable"
+  ]
+}
