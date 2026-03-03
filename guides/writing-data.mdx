@@ -1,0 +1,265 @@
+---
+title: Writing data
+description: Learn how to save health data samples to HealthKit
+---
+
+React Native HealthKit allows you to save various types of health data to HealthKit. All save operations require proper write authorization.
+
+## Request write authorization
+
+Before saving any data, request write permission for the specific data types:
+
+```typescript
+import { requestAuthorization } from '@kingstinct/react-native-healthkit';
+
+await requestAuthorization({ 
+  toShare: ['HKQuantityTypeIdentifierInsulinDelivery'] 
+});
+```
+
+<Warning>
+Attempting to save data without proper authorization will cause your app to crash. Always request `toShare` permissions before writing data.
+</Warning>
+
+## Save quantity samples
+
+Use `saveQuantitySample` to save measurements like steps, heart rate, or blood glucose:
+
+```typescript
+import { saveQuantitySample, InsulinDeliveryReason } from '@kingstinct/react-native-healthkit';
+
+// Save a simple quantity sample
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierInsulinDelivery',
+  'IU',
+  5.5
+);
+
+// Save with metadata
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierInsulinDelivery',
+  'IU',
+  5.5,
+  {
+    metadata: {
+      HKInsulinDeliveryReason: InsulinDeliveryReason.basal,
+    },
+  }
+);
+
+// Save with start and end dates
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierStepCount',
+  'count',
+  1000,
+  {
+    start: new Date(2024, 0, 1, 10, 0),
+    end: new Date(2024, 0, 1, 11, 0),
+  }
+);
+```
+
+## Save category samples
+
+Category samples represent categorical data like sleep stages or mindful sessions:
+
+```typescript
+import { saveCategorySample, CategoryValueSleepAnalysis } from '@kingstinct/react-native-healthkit';
+
+// Save a sleep sample
+await saveCategorySample({
+  categoryType: 'HKCategoryTypeIdentifierSleepAnalysis',
+  value: CategoryValueSleepAnalysis.asleepCore,
+  start: new Date(2024, 0, 1, 22, 0),
+  end: new Date(2024, 0, 2, 6, 0),
+  metadata: {}
+});
+
+// Save a mindful session
+await saveCategorySample({
+  categoryType: 'HKCategoryTypeIdentifierMindfulSession',
+  value: 0,
+  start: new Date(2024, 0, 1, 9, 0),
+  end: new Date(2024, 0, 1, 9, 15),
+  metadata: {}
+});
+```
+
+## Save workouts
+
+Workout samples capture exercise sessions:
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+const workout = await saveWorkoutSample({
+  workoutActivityType: WorkoutActivityType.running,
+  start: new Date(2024, 0, 1, 7, 0),
+  end: new Date(2024, 0, 1, 8, 0),
+  energyBurned: {
+    quantity: 300,
+    unit: 'kcal'
+  },
+  distance: {
+    quantity: 5,
+    unit: 'km'
+  },
+  metadata: {}
+});
+
+console.log(workout.uuid); // UUID of saved workout
+```
+
+<Note>
+`saveWorkoutSample` returns a `WorkoutProxy` object that contains the saved workout data and additional methods for working with the workout.
+</Note>
+
+## Save workout routes
+
+After saving a workout, you can add GPS route data:
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+const workout = await saveWorkoutSample({
+  workoutActivityType: WorkoutActivityType.running,
+  start: new Date(2024, 0, 1, 7, 0),
+  end: new Date(2024, 0, 1, 8, 0),
+  metadata: {}
+});
+
+// Save route for the workout
+await workout.saveWorkoutRoute([
+  {
+    latitude: 37.7749,
+    longitude: -122.4194,
+    altitude: 10,
+    course: 0,
+    speed: 2.5,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    date: new Date(2024, 0, 1, 7, 0)
+  },
+  {
+    latitude: 37.7750,
+    longitude: -122.4195,
+    altitude: 11,
+    course: 45,
+    speed: 2.6,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    date: new Date(2024, 0, 1, 7, 1)
+  },
+  // ... more locations
+]);
+```
+
+## Save correlation samples
+
+Correlation samples group related data together (like blood pressure or food):
+
+```typescript
+import { saveCorrelationSample } from '@kingstinct/react-native-healthkit';
+
+// Save blood pressure reading
+await saveCorrelationSample({
+  correlationType: 'HKCorrelationTypeIdentifierBloodPressure',
+  objects: [
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureSystolic',
+      quantity: 120,
+      unit: 'mmHg'
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureDiastolic',
+      quantity: 80,
+      unit: 'mmHg'
+    }
+  ],
+  start: new Date(),
+  end: new Date(),
+  metadata: {}
+});
+```
+
+## Metadata keys
+
+HealthKit supports custom and built-in metadata keys:
+
+```typescript
+// Custom metadata
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  'mg/dL',
+  120,
+  {
+    metadata: {
+      // Custom app-specific metadata
+      customKey: 'customValue',
+      note: 'Before breakfast'
+    },
+  }
+);
+
+// Built-in HealthKit metadata keys
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  'mg/dL',
+  120,
+  {
+    metadata: {
+      // Use string values for built-in keys (drop "MetadataKey" from the name)
+      HKBloodGlucoseMealTime: 1, // Preprandial
+      HKWasUserEntered: true
+    },
+  }
+);
+```
+
+<Tip>
+When using built-in HealthKit metadata keys from the [Apple documentation](https://developer.apple.com/documentation/healthkit/samples/metadata_keys), drop "MetadataKey" from the constant name. For example, `HKMetadataKeyExternalUUID` becomes `HKExternalUUID`.
+</Tip>
+
+## Units and compatibility
+
+HealthKit supports various units for different quantity types. Check unit compatibility:
+
+```typescript
+import { isQuantityCompatibleWithUnit } from '@kingstinct/react-native-healthkit';
+
+const compatible = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierHeartRate',
+  'count/min'
+);
+
+console.log(compatible); // true
+```
+
+Common units by data type:
+
+- **Steps, counts**: `count`
+- **Distance**: `m`, `km`, `mi`, `ft`
+- **Energy**: `kcal`, `kJ`
+- **Heart rate**: `count/min`
+- **Blood glucose**: `mg/dL`, `mmol/L`
+- **Temperature**: `degC`, `degF`
+- **Body fat**: `%`
+- **Insulin**: `IU`
+
+## Error handling
+
+Always handle errors when saving data:
+
+```typescript
+try {
+  await saveQuantitySample(
+    'HKQuantityTypeIdentifierStepCount',
+    'count',
+    1000
+  );
+  console.log('Data saved successfully');
+} catch (error) {
+  console.error('Failed to save data:', error);
+  // Handle authorization errors, invalid data, etc.
+}
+```

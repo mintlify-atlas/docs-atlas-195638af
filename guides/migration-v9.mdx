@@ -1,0 +1,339 @@
+---
+title: Migration to v9.0.0
+description: Guide for migrating from earlier versions to React Native HealthKit v9.0.0
+---
+
+Version 9.0.0 brings significant improvements to React Native HealthKit with better performance, type safety, and developer experience. This guide helps you migrate from earlier versions.
+
+## Overview of changes
+
+Version 9.0.0 includes these major updates:
+
+- Migration to react-native-nitro-modules for better performance and type safety
+- Simplified naming conventions (removed HK prefixes to avoid conflicts)
+- Fewer required parameters with sensible defaults
+- Flexible filters mapping closer to native HealthKit constructs
+- Unified deletion method with flexible filters
+- Workouts as proxy objects with built-in functions
+- String-based identifiers with stricter typing
+- String-based units with compatibility helpers
+
+## Naming convention changes
+
+Most HK-prefixed types have been renamed:
+
+```typescript
+// Before (v8.x)
+import { HKQuantityTypeIdentifier } from '@kingstinct/react-native-healthkit';
+const identifier: HKQuantityTypeIdentifier = 'HKQuantityTypeIdentifierStepCount';
+
+// After (v9.0)
+import { QuantityTypeIdentifier } from '@kingstinct/react-native-healthkit';
+const identifier: QuantityTypeIdentifier = 'HKQuantityTypeIdentifierStepCount';
+```
+
+<Note>
+The actual string values (like `'HKQuantityTypeIdentifierStepCount'`) remain unchanged. Only the TypeScript type names have changed.
+</Note>
+
+## Simplified function calls
+
+Many parameters are now optional with smart defaults:
+
+```typescript
+// Before (v8.x) - required options object
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  limit: 20,
+  ascending: false
+});
+
+// After (v9.0) - works without options
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount');
+// Returns last 20 samples by default
+```
+
+## Flexible filter system
+
+Filters now map closer to native HealthKit:
+
+```typescript
+// Before (v8.x)
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  from: startDate,
+  to: endDate,
+  limit: 100
+});
+
+// After (v9.0)
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  limit: 100,
+  filter: {
+    date: {
+      startDate,
+      endDate
+    }
+  }
+});
+```
+
+New filter capabilities:
+
+```typescript
+// Filter by UUID
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    uuid: 'specific-sample-uuid'
+  }
+});
+
+// Filter by multiple UUIDs
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    uuids: ['uuid-1', 'uuid-2', 'uuid-3']
+  }
+});
+
+// Filter by workout
+const heartRateSamples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
+  filter: {
+    workout: workoutProxy
+  }
+});
+```
+
+## Unified deletion method
+
+All deletion methods replaced with single `deleteObjects` function:
+
+```typescript
+// Before (v8.x)
+await deleteQuantitySample(uuid);
+await deleteCategorySample(uuid);
+await deleteWorkout(uuid);
+
+// After (v9.0)
+import { deleteObjects } from '@kingstinct/react-native-healthkit';
+
+// Delete by UUID
+await deleteObjects({
+  filter: {
+    uuid: 'sample-uuid'
+  }
+});
+
+// Delete by multiple UUIDs
+await deleteObjects({
+  filter: {
+    uuids: ['uuid-1', 'uuid-2']
+  }
+});
+
+// Delete by date range
+await deleteObjects({
+  filter: {
+    date: {
+      startDate: new Date(2024, 0, 1),
+      endDate: new Date(2024, 0, 2)
+    }
+  }
+});
+```
+
+## Workout proxy objects
+
+Workouts are now returned as proxy objects with methods:
+
+```typescript
+// Before (v8.x)
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+const routes = await getWorkoutRoutes(workout.uuid);
+
+// After (v9.0)
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+
+// Methods are built into the workout object
+const routes = await workout.getWorkoutRoutes();
+const stats = await workout.getStatistic('HKQuantityTypeIdentifierHeartRate');
+const allStats = await workout.getAllStatistics();
+await workout.saveWorkoutRoute(locations);
+```
+
+## Object identifiers as strings
+
+Identifiers are now strictly typed strings instead of enums:
+
+```typescript
+// Before (v8.x)
+import { HKQuantityTypeIdentifier } from '@kingstinct/react-native-healthkit';
+const identifier = HKQuantityTypeIdentifier.stepCount;
+
+// After (v9.0)
+const identifier = 'HKQuantityTypeIdentifierStepCount';
+// Type is inferred as QuantityTypeIdentifier
+```
+
+<Tip>
+The string-based approach provides better autocomplete and type checking while being more maintainable.
+</Tip>
+
+## Unit handling
+
+Units are now strings with helper functions:
+
+```typescript
+// Before (v8.x) - enum-based units
+import { HKUnit } from '@kingstinct/react-native-healthkit';
+const unit = HKUnit.count;
+
+// After (v9.0) - string-based units
+const unit = 'count';
+
+// Check compatibility
+import { isQuantityCompatibleWithUnit } from '@kingstinct/react-native-healthkit';
+
+const compatible = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierHeartRate',
+  'count/min'
+);
+```
+
+Units default to user preferences when not specified:
+
+```typescript
+// Before (v8.x) - unit often required
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  unit: HKUnit.count
+});
+
+// After (v9.0) - unit optional, defaults to user preference
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount');
+// Returns data in user's preferred unit
+```
+
+## Updated anchor queries
+
+Anchor query responses have new structure:
+
+```typescript
+// Before (v8.x)
+const result = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  { limit: 2 }
+);
+const { anchor, samples, deletedSamples } = result;
+
+// After (v9.0)
+const result = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  { limit: 2 }
+);
+const { newAnchor, samples, deletedSamples } = result;
+// Note: 'anchor' renamed to 'newAnchor'
+```
+
+## Import path changes
+
+All imports remain from the same package:
+
+```typescript
+// Both v8.x and v9.0
+import {
+  requestAuthorization,
+  queryQuantitySamples,
+  saveQuantitySample,
+  useMostRecentQuantitySample
+} from '@kingstinct/react-native-healthkit';
+```
+
+## Type import updates
+
+Update type imports to use new names:
+
+```typescript
+// Before (v8.x)
+import type {
+  HKQuantityTypeIdentifier,
+  HKCategoryTypeIdentifier,
+  HKWorkoutActivityType
+} from '@kingstinct/react-native-healthkit';
+
+// After (v9.0)
+import type {
+  QuantityTypeIdentifier,
+  CategoryTypeIdentifier
+} from '@kingstinct/react-native-healthkit';
+import { WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+// Note: WorkoutActivityType is still an enum
+```
+
+## Breaking changes checklist
+
+<Steps>
+
+<Step title="Update type names">
+Replace `HKQuantityTypeIdentifier` with `QuantityTypeIdentifier` and similar for other types.
+</Step>
+
+<Step title="Update filter syntax">
+Replace `from`/`to` parameters with `filter.date.startDate`/`endDate`.
+</Step>
+
+<Step title="Replace deletion methods">
+Replace specific deletion methods with `deleteObjects`.
+</Step>
+
+<Step title="Update workout code">
+Use workout proxy methods instead of separate functions.
+</Step>
+
+<Step title="Update anchor handling">
+Rename `anchor` to `newAnchor` in query responses.
+</Step>
+
+<Step title="Review unit usage">
+Replace unit enums with string values.
+</Step>
+
+<Step title="Test thoroughly">
+Test all HealthKit interactions to ensure compatibility.
+</Step>
+
+</Steps>
+
+## Performance improvements
+
+Version 9.0 brings significant performance benefits:
+
+- Faster native bridge communication via Nitro Modules
+- Reduced memory usage with proxy objects
+- Better type safety prevents runtime errors
+- Optimized query handling
+
+<Note>
+The migration to react-native-nitro-modules improves performance and type safety while reducing boilerplate code, making the library easier to maintain and extend.
+</Note>
+
+## Getting help
+
+If you encounter issues during migration:
+
+- Check the [GitHub repository](https://github.com/Kingstinct/react-native-healthkit)
+- Join the [Discord community](https://discord.gg/hrgnETpsJA)
+- Review the [API reference](/api-reference)
+- Open an issue on GitHub for bugs
+
+## Gradual migration
+
+You can migrate incrementally:
+
+1. Update package version
+2. Fix TypeScript errors (mainly naming changes)
+3. Update one feature area at a time
+4. Test each area before moving to the next
+5. Update deletion code last (typically least used)
+
+<Tip>
+Start by updating type imports and fixing TypeScript errors. Most code will continue working with minimal changes.
+</Tip>

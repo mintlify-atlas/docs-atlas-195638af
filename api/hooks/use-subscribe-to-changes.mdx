@@ -1,0 +1,363 @@
+---
+title: 'useSubscribeToChanges'
+description: 'React hook to subscribe to HealthKit data changes'
+---
+
+## Overview
+
+The `useSubscribeToChanges` hook subscribes to changes for a specific HealthKit data type and triggers a callback when new data is added, modified, or deleted. This is useful for keeping your UI in sync with HealthKit data.
+
+## Usage
+
+```typescript
+import { useSubscribeToChanges } from '@kingstinct/react-native-healthkit';
+
+useSubscribeToChanges('HKQuantityTypeIdentifierStepCount', (args) => {
+  console.log('Steps data changed:', args);
+});
+```
+
+## Parameters
+
+<ParamField path="identifier" type="SampleTypeIdentifier" required>
+  The HealthKit type identifier to subscribe to (quantity, category, workout, etc.)
+</ParamField>
+
+<ParamField path="onChange" type="(args: OnChangeCallbackArgs) => void" required>
+  Callback function invoked when data changes
+  
+  ```typescript
+  interface OnChangeCallbackArgs {
+    typeIdentifier: string;
+  }
+  ```
+</ParamField>
+
+## Return Value
+
+This hook does not return a value. It manages the subscription lifecycle automatically, cleaning up when the component unmounts.
+
+## Example: Refresh Steps Count
+
+```typescript
+import { useSubscribeToChanges } from '@kingstinct/react-native-healthkit';
+import { useState, useCallback } from 'react';
+import { View, Text } from 'react-native';
+import { getMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+function StepsCounter() {
+  const [steps, setSteps] = useState(0);
+  
+  const fetchSteps = useCallback(async () => {
+    const sample = await getMostRecentQuantitySample(
+      'HKQuantityTypeIdentifierStepCount'
+    );
+    if (sample) {
+      setSteps(sample.quantity);
+    }
+  }, []);
+  
+  // Subscribe to changes
+  useSubscribeToChanges('HKQuantityTypeIdentifierStepCount', () => {
+    fetchSteps();
+  });
+  
+  // Initial fetch
+  useEffect(() => {
+    fetchSteps();
+  }, [fetchSteps]);
+
+  return (
+    <View>
+      <Text style={{ fontSize: 32, fontWeight: 'bold' }}>
+        {steps.toLocaleString()}
+      </Text>
+      <Text>steps</Text>
+    </View>
+  );
+}
+```
+
+## Example: Multiple Subscriptions
+
+```typescript
+import { useSubscribeToChanges } from '@kingstinct/react-native-healthkit';
+import { useState } from 'react';
+import { View, Text } from 'react-native';
+
+function HealthDashboard() {
+  const [lastUpdate, setLastUpdate] = useState<{
+    type: string;
+    time: Date;
+  } | null>(null);
+  
+  const handleChange = (type: string) => () => {
+    setLastUpdate({ type, time: new Date() });
+    console.log(`${type} data updated`);
+  };
+  
+  // Subscribe to multiple data types
+  useSubscribeToChanges(
+    'HKQuantityTypeIdentifierStepCount',
+    handleChange('Steps')
+  );
+  
+  useSubscribeToChanges(
+    'HKQuantityTypeIdentifierHeartRate',
+    handleChange('Heart Rate')
+  );
+  
+  useSubscribeToChanges(
+    'HKCategoryTypeIdentifierSleepAnalysis',
+    handleChange('Sleep')
+  );
+  
+  useSubscribeToChanges(
+    'HKWorkoutTypeIdentifier',
+    handleChange('Workout')
+  );
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+        Health Data Monitor
+      </Text>
+      {lastUpdate && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ color: 'green' }}>
+            {lastUpdate.type} updated at {lastUpdate.time.toLocaleTimeString()}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+```
+
+## Example: Refetch Query on Change
+
+```typescript
+import { 
+  useSubscribeToChanges,
+  queryQuantitySamples 
+} from '@kingstinct/react-native-healthkit';
+import { useState, useCallback, useEffect } from 'react';
+import { View, Text, FlatList } from 'react-native';
+
+function RecentSteps() {
+  const [samples, setSamples] = useState([]);
+  
+  const fetchSamples = useCallback(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const result = await queryQuantitySamples(
+      'HKQuantityTypeIdentifierStepCount',
+      {
+        filter: { date: { startDate: today } },
+        limit: 10,
+      }
+    );
+    
+    setSamples(result.samples);
+  }, []);
+  
+  // Refetch when data changes
+  useSubscribeToChanges('HKQuantityTypeIdentifierStepCount', fetchSamples);
+  
+  // Initial fetch
+  useEffect(() => {
+    fetchSamples();
+  }, [fetchSamples]);
+
+  return (
+    <View>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+        Recent Steps
+      </Text>
+      <FlatList
+        data={samples}
+        keyExtractor={(item) => item.uuid}
+        renderItem={({ item }) => (
+          <View style={{ padding: 10, borderBottomWidth: 1 }}>
+            <Text>{item.quantity} steps</Text>
+            <Text style={{ fontSize: 12, color: 'gray' }}>
+              {item.startDate.toLocaleString()}
+            </Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+```
+
+## Example: Live Activity Tracker
+
+```typescript
+import { useSubscribeToChanges } from '@kingstinct/react-native-healthkit';
+import { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+function LiveActivityTracker() {
+  const [updateCount, setUpdateCount] = useState(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  
+  useSubscribeToChanges('HKQuantityTypeIdentifierActiveEnergyBurned', () => {
+    setUpdateCount((count) => count + 1);
+    setLastUpdateTime(new Date());
+  });
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>Live</Text>
+      </View>
+      
+      <Text style={styles.title}>Activity Monitor</Text>
+      
+      <View style={styles.stats}>
+        <Text style={styles.label}>Updates Received</Text>
+        <Text style={styles.value}>{updateCount}</Text>
+      </View>
+      
+      {lastUpdateTime && (
+        <Text style={styles.timestamp}>
+          Last update: {lastUpdateTime.toLocaleTimeString()}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#ff3b30',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  stats: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  label: {
+    fontSize: 14,
+    color: '#666',
+  },
+  value: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginTop: 5,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+});
+```
+
+## Example: Custom Hook with Subscription
+
+```typescript
+import { useSubscribeToChanges } from '@kingstinct/react-native-healthkit';
+import { useState, useCallback, useEffect } from 'react';
+import { getMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+import type { QuantityTypeIdentifier, QuantitySample } from '@kingstinct/react-native-healthkit';
+
+// Custom hook that combines subscription with data fetching
+function useLiveQuantity(identifier: QuantityTypeIdentifier) {
+  const [sample, setSample] = useState<QuantitySample | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const fetch = useCallback(async () => {
+    try {
+      const result = await getMostRecentQuantitySample(identifier);
+      setSample(result || null);
+    } catch (error) {
+      console.error('Failed to fetch sample:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [identifier]);
+  
+  // Subscribe to changes
+  useSubscribeToChanges(identifier, fetch);
+  
+  // Initial fetch
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+  
+  return { sample, loading, refetch: fetch };
+}
+
+// Usage
+function HeartRateMonitor() {
+  const { sample, loading, refetch } = useLiveQuantity(
+    'HKQuantityTypeIdentifierHeartRate'
+  );
+  
+  if (loading) return <Text>Loading...</Text>;
+  if (!sample) return <Text>No data</Text>;
+  
+  return (
+    <View>
+      <Text>{sample.quantity} {sample.unit}</Text>
+      <Button title="Refresh" onPress={refetch} />
+    </View>
+  );
+}
+```
+
+## Lifecycle Management
+
+The hook automatically:
+- Subscribes when the component mounts
+- Unsubscribes when the component unmounts
+- Updates the subscription if the identifier changes
+- Uses a stable callback reference to avoid unnecessary re-subscriptions
+
+## Background Updates
+
+<Note>
+HealthKit can trigger updates even when your app is in the background if you've enabled background delivery for specific data types. Configure this separately using HealthKit's background delivery APIs.
+</Note>
+
+## Important Notes
+
+<Warning>
+**Request authorization first.** You must request authorization for the data type before subscribing to changes, or your app may crash.
+</Warning>
+
+<Tip>
+The callback receives the type identifier, which is useful when using the same callback for multiple subscriptions.
+</Tip>
+
+## See Also
+
+- [subscribeToChanges](/api/core/subscribe-to-changes) - Imperative API
+- [useMostRecentQuantitySample](/api/hooks/use-most-recent-quantity-sample) - Already includes subscription
+- [useStatisticsForQuantity](/api/hooks/use-statistics-for-quantity) - Already includes subscription
+- [Apple HealthKit Observer Queries](https://developer.apple.com/documentation/healthkit/hkobserverquery)

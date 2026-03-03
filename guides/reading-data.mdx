@@ -1,0 +1,214 @@
+---
+title: Reading data
+description: Learn how to query and read health data from HealthKit
+---
+
+React Native HealthKit provides multiple query functions to read health data. All queries require proper authorization before use.
+
+## Request authorization first
+
+Before reading any data, you must request read permission for the specific data types:
+
+```typescript
+import { requestAuthorization } from '@kingstinct/react-native-healthkit';
+
+await requestAuthorization({ 
+  toRead: ['HKQuantityTypeIdentifierBodyFatPercentage'] 
+});
+```
+
+<Warning>
+Failing to request authorization before querying data will cause your app to crash. Make sure to request permissions before using hooks or query functions.
+</Warning>
+
+## Query quantity samples
+
+Use `queryQuantitySamples` to fetch quantity data like steps, heart rate, or blood glucose:
+
+```typescript
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+// Simple query - returns last 20 samples by default
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount');
+
+// Query with options
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
+  limit: 10,
+  ascending: false,
+  unit: 'count/min'
+});
+
+// Query with date filter
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  limit: 50,
+  filter: {
+    date: {
+      startDate: new Date(2024, 0, 1),
+      endDate: new Date(2024, 11, 31)
+    }
+  }
+});
+```
+
+## Get most recent sample
+
+For getting just the latest value, use `getMostRecentQuantitySample`:
+
+```typescript
+import { getMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+const { quantity, unit, startDate, endDate } = await getMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierBodyFatPercentage'
+);
+
+console.log(quantity); // 17.5
+console.log(unit); // %
+```
+
+## Query category samples
+
+Category samples represent data like sleep analysis or mindful sessions:
+
+```typescript
+import { queryCategorySamples, CategoryValueSleepAnalysis } from '@kingstinct/react-native-healthkit';
+
+const sleepSamples = await queryCategorySamples('HKCategoryTypeIdentifierSleepAnalysis', {
+  limit: 7,
+  ascending: false
+});
+
+sleepSamples.forEach(sample => {
+  console.log(sample.value); // CategoryValueSleepAnalysis.asleepCore, etc.
+  console.log(sample.startDate);
+  console.log(sample.endDate);
+});
+```
+
+## Query workouts
+
+Workout samples contain exercise and activity data:
+
+```typescript
+import { queryWorkoutSamples, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+const workouts = await queryWorkoutSamples({
+  limit: 10,
+  filter: {
+    workoutActivityType: WorkoutActivityType.running
+  }
+});
+
+for (const workout of workouts) {
+  console.log(workout.workoutActivityType);
+  console.log(workout.duration);
+  console.log(workout.totalDistance);
+  console.log(workout.totalEnergyBurned);
+}
+```
+
+## Using hooks for reactive data
+
+Hooks automatically subscribe to changes and keep your data up-to-date:
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+function BloodGlucoseDisplay() {
+  const sample = useMostRecentQuantitySample('HKQuantityTypeIdentifierBloodGlucose');
+  
+  if (!sample) return <Text>No data</Text>;
+  
+  return (
+    <Text>{sample.quantity} {sample.unit}</Text>
+  );
+}
+```
+
+<Note>
+Hooks automatically refetch data when HealthKit data changes, so your UI stays synchronized with the Health app.
+</Note>
+
+## Filter by UUID
+
+Query specific samples by their unique identifier:
+
+```typescript
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    uuid: 'specific-sample-uuid'
+  }
+});
+
+// Or multiple UUIDs
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    uuids: ['uuid-1', 'uuid-2', 'uuid-3']
+  }
+});
+```
+
+## Filter by source
+
+Query data from specific apps or devices:
+
+```typescript
+import { querySources } from '@kingstinct/react-native-healthkit';
+
+const sources = await querySources('HKQuantityTypeIdentifierStepCount');
+
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    sources: [sources[0]] // Filter by first source
+  }
+});
+```
+
+## Filter by workout
+
+Query samples associated with a specific workout:
+
+```typescript
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+
+const heartRateSamples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
+  filter: {
+    workout: workout
+  }
+});
+```
+
+## Advanced filtering
+
+Combine multiple filters using AND, OR, and NOT:
+
+```typescript
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  filter: {
+    date: {
+      startDate: new Date(2024, 0, 1)
+    },
+    AND: [
+      {
+        metadata: {
+          withMetadataKey: 'HKWasUserEntered',
+          value: false
+        }
+      }
+    ]
+  }
+});
+```
+
+## Query options
+
+All query functions support these common options:
+
+- `limit` - Maximum number of samples to return (default: 20, use 0 or -1 for all)
+- `ascending` - Sort order by date (default: false)
+- `unit` - Preferred unit for the data (defaults to user's preferred unit)
+- `filter` - Complex filtering options (date, UUID, source, metadata, etc.)
+
+<Tip>
+When `unit` is not specified, HealthKit automatically returns data in the user's preferred unit based on their locale and Health app settings.
+</Tip>

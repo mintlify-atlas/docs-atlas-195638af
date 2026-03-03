@@ -1,122 +1,151 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "React Native HealthKit",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#FF2D55",
+    "light": "#FF2D55",
+    "dark": "#FF2D55"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/kingstinct/react-native-healthkit"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/kingstinct/react-native-healthkit"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "core-concepts/authorization",
+              "core-concepts/data-types",
+              "core-concepts/units",
+              "core-concepts/background-delivery"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/reading-data",
+              "guides/writing-data",
+              "guides/subscriptions",
+              "guides/workouts",
+              "guides/statistics",
+              "guides/anchors",
+              "guides/migration-v9"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api/overview"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Core",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/core/authorization",
+              "api/core/availability",
+              "api/core/background-delivery",
+              "api/core/preferred-units"
+            ]
+          },
+          {
+            "group": "Quantity Types",
+            "pages": [
+              "api/quantity/query-samples",
+              "api/quantity/save-sample",
+              "api/quantity/statistics",
+              "api/quantity/identifiers"
+            ]
+          },
+          {
+            "group": "Category Types",
+            "pages": [
+              "api/category/query-samples",
+              "api/category/save-sample",
+              "api/category/identifiers"
+            ]
+          },
+          {
+            "group": "Workouts",
+            "pages": [
+              "api/workouts/query",
+              "api/workouts/save",
+              "api/workouts/routes"
+            ]
+          },
+          {
+            "group": "Correlations",
+            "pages": [
+              "api/correlations/query",
+              "api/correlations/save"
+            ]
+          },
+          {
+            "group": "Characteristics",
+            "pages": [
+              "api/characteristics/biological-sex",
+              "api/characteristics/blood-type",
+              "api/characteristics/date-of-birth",
+              "api/characteristics/fitzpatrick-skin-type",
+              "api/characteristics/wheelchair-use"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api/advanced/electrocardiogram",
+              "api/advanced/heartbeat-series",
+              "api/advanced/state-of-mind",
+              "api/advanced/medication"
+            ]
+          },
+          {
+            "group": "React Hooks",
+            "pages": [
+              "api/hooks/use-healthkit-authorization",
+              "api/hooks/use-is-health-data-available",
+              "api/hooks/use-most-recent-quantity-sample",
+              "api/hooks/use-most-recent-category-sample",
+              "api/hooks/use-most-recent-workout",
+              "api/hooks/use-statistics-for-quantity",
+              "api/hooks/use-subscribe-to-changes",
+              "api/hooks/use-sources"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/query-options",
+              "api/types/samples",
+              "api/types/units"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

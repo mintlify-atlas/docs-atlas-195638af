@@ -1,0 +1,336 @@
+---
+title: 'useStatisticsForQuantity'
+description: 'React hook to fetch and subscribe to quantity statistics'
+---
+
+## Overview
+
+The `useStatisticsForQuantity` hook fetches statistical data (sum, average, min, max, etc.) for a quantity type over a specified date range and automatically subscribes to updates.
+
+## Usage
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+
+const statistics = useStatisticsForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  new Date('2024-01-01'),
+  new Date()
+);
+```
+
+## Parameters
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The HealthKit quantity type identifier
+</ParamField>
+
+<ParamField path="options" type="StatisticsOptions[]" required>
+  Array of statistical options to compute
+  
+  Available options:
+  - `cumulativeSum` - Total sum of all samples
+  - `discreteAverage` - Average of discrete samples
+  - `discreteMax` - Maximum value
+  - `discreteMin` - Minimum value
+  - `duration` - Total duration
+  - `mostRecent` - Most recent value
+  - `separateBySource` - Separate statistics by source
+</ParamField>
+
+<ParamField path="from" type="Date" required>
+  Start date for the statistics query
+</ParamField>
+
+<ParamField path="to" type="Date">
+  End date for the statistics query. Defaults to current date if not provided.
+</ParamField>
+
+<ParamField path="unit" type="string">
+  Unit for the quantity. Defaults to the user's preferred unit.
+</ParamField>
+
+## Return Value
+
+<ResponseField name="statistics" type="QueryStatisticsResponse | null">
+  Statistics result or `null` if loading/unavailable.
+  
+  ```typescript
+  interface QueryStatisticsResponse {
+    averageQuantity?: number;
+    maximumQuantity?: number;
+    minimumQuantity?: number;
+    sumQuantity?: number;
+    mostRecentQuantity?: number;
+    duration?: number;
+  }
+  ```
+</ResponseField>
+
+## Example: Daily Steps
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function DailySteps() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const stats = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierStepCount',
+    ['cumulativeSum'],
+    today,
+    new Date()
+  );
+
+  if (!stats) {
+    return <Text>Loading steps...</Text>;
+  }
+
+  return (
+    <View>
+      <Text style={{ fontSize: 32, fontWeight: 'bold' }}>
+        {stats.sumQuantity?.toLocaleString() || 0}
+      </Text>
+      <Text style={{ color: 'gray' }}>steps today</Text>
+    </View>
+  );
+}
+```
+
+## Example: Heart Rate Statistics
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+import { View, Text, StyleSheet } from 'react-native';
+
+function HeartRateStats() {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const stats = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierHeartRate',
+    ['discreteAverage', 'discreteMin', 'discreteMax'],
+    startOfDay,
+    new Date(),
+    'count/min'
+  );
+
+  if (!stats) {
+    return <Text>Loading heart rate data...</Text>;
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Heart Rate Today</Text>
+      
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <Text style={styles.label}>Average</Text>
+          <Text style={styles.value}>
+            {stats.averageQuantity?.toFixed(0) || '--'}
+          </Text>
+          <Text style={styles.unit}>BPM</Text>
+        </View>
+        
+        <View style={styles.stat}>
+          <Text style={styles.label}>Min</Text>
+          <Text style={styles.value}>
+            {stats.minimumQuantity?.toFixed(0) || '--'}
+          </Text>
+          <Text style={styles.unit}>BPM</Text>
+        </View>
+        
+        <View style={styles.stat}>
+          <Text style={styles.label}>Max</Text>
+          <Text style={styles.value}>
+            {stats.maximumQuantity?.toFixed(0) || '--'}
+          </Text>
+          <Text style={styles.unit}>BPM</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  stat: {
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 5,
+  },
+  value: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  unit: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+});
+```
+
+## Example: Weekly Activity Summary
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function WeeklyActivity() {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  
+  const steps = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierStepCount',
+    ['cumulativeSum', 'discreteAverage'],
+    weekAgo,
+    new Date()
+  );
+  
+  const calories = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierActiveEnergyBurned',
+    ['cumulativeSum'],
+    weekAgo,
+    new Date(),
+    'kcal'
+  );
+  
+  const distance = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierDistanceWalkingRunning',
+    ['cumulativeSum'],
+    weekAgo,
+    new Date(),
+    'km'
+  );
+
+  if (!steps || !calories || !distance) {
+    return <Text>Loading weekly data...</Text>;
+  }
+
+  return (
+    <View style={{ padding: 20, backgroundColor: '#f5f5f5', borderRadius: 12 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 15 }}>
+        Last 7 Days
+      </Text>
+      
+      <View style={{ gap: 10 }}>
+        <View>
+          <Text style={{ fontSize: 14, color: '#666' }}>Total Steps</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+            {steps.sumQuantity?.toLocaleString()}
+          </Text>
+          <Text style={{ fontSize: 12, color: '#999' }}>
+            Avg: {steps.averageQuantity?.toFixed(0)}/day
+          </Text>
+        </View>
+        
+        <View>
+          <Text style={{ fontSize: 14, color: '#666' }}>Calories Burned</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+            {calories.sumQuantity?.toFixed(0)} kcal
+          </Text>
+        </View>
+        
+        <View>
+          <Text style={{ fontSize: 14, color: '#666' }}>Distance</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+            {distance.sumQuantity?.toFixed(2)} km
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+```
+
+## Example: Custom Date Range
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+import { useState } from 'react';
+import { View, Text, Button } from 'react-native';
+
+function CustomRangeStats() {
+  const [startDate, setStartDate] = useState(new Date('2024-01-01'));
+  const [endDate, setEndDate] = useState(new Date('2024-01-31'));
+  
+  const stats = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierStepCount',
+    ['cumulativeSum', 'discreteAverage', 'discreteMax'],
+    startDate,
+    endDate
+  );
+
+  const setThisMonth = () => {
+    const now = new Date();
+    setStartDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    setEndDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  };
+
+  const setLastMonth = () => {
+    const now = new Date();
+    setStartDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    setEndDate(new Date(now.getFullYear(), now.getMonth(), 0));
+  };
+
+  return (
+    <View style={{ padding: 20 }}>
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+        <Button title="This Month" onPress={setThisMonth} />
+        <Button title="Last Month" onPress={setLastMonth} />
+      </View>
+      
+      {stats ? (
+        <View>
+          <Text>Total: {stats.sumQuantity?.toLocaleString()}</Text>
+          <Text>Average: {stats.averageQuantity?.toFixed(0)}/day</Text>
+          <Text>Peak: {stats.maximumQuantity?.toLocaleString()}</Text>
+        </View>
+      ) : (
+        <Text>Loading...</Text>
+      )}
+    </View>
+  );
+}
+```
+
+## Auto-Updates
+
+The hook automatically subscribes to changes for the specified quantity type. When new data is saved within the date range, the statistics will update.
+
+## Important Notes
+
+<Warning>
+**Request authorization first.** Ensure you've requested authorization for the quantity type before using this hook, or your app will crash.
+</Warning>
+
+<Tip>
+For better performance with large date ranges, consider using `queryStatisticsCollectionForQuantity` to get statistics broken down by intervals (hourly, daily, etc.).
+</Tip>
+
+## See Also
+
+- [queryStatisticsForQuantity](/api/quantity/query-statistics-for-quantity) - Imperative API
+- [queryStatisticsCollectionForQuantity](/api/quantity/query-statistics-collection) - Get statistics by intervals
+- [useMostRecentQuantitySample](/api/hooks/use-most-recent-quantity-sample) - Get single sample
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) - Request authorization

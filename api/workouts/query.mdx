@@ -1,0 +1,215 @@
+---
+title: "Query Workout Samples"
+description: "Query workout samples from HealthKit with optional filtering and anchored queries"
+---
+
+## queryWorkoutSamples
+
+Query workout samples from HealthKit with optional filtering and sorting.
+
+### Signature
+
+```typescript
+function queryWorkoutSamples(
+  options: WorkoutQueryOptions
+): Promise<WorkoutProxy[]>
+```
+
+### Parameters
+
+<ParamField path="options" type="WorkoutQueryOptions" required>
+  Query options for filtering and sorting workouts
+  
+  <Expandable title="properties">
+    <ParamField path="filter" type="FilterForWorkouts">
+      Optional filter criteria for workouts
+      
+      <Expandable title="properties">
+        <ParamField path="workoutActivityType" type="WorkoutActivityType">
+          Filter by specific workout activity type (e.g., running, cycling)
+        </ParamField>
+        
+        <ParamField path="duration" type="WorkoutDurationPredicate">
+          Filter by workout duration
+          
+          <Expandable title="properties">
+            <ParamField path="predicateOperator" type="ComparisonPredicateOperator" required>
+              Comparison operator (e.g., greaterThan, lessThan, equalTo)
+            </ParamField>
+            
+            <ParamField path="durationInSeconds" type="number" required>
+              Duration value in seconds
+            </ParamField>
+          </Expandable>
+        </ParamField>
+        
+        <ParamField path="startDate" type="Date">
+          Filter workouts starting after this date
+        </ParamField>
+        
+        <ParamField path="endDate" type="Date">
+          Filter workouts ending before this date
+        </ParamField>
+        
+        <ParamField path="OR" type="FilterForWorkoutsBase[]">
+          Array of filter conditions where at least one must match
+        </ParamField>
+        
+        <ParamField path="AND" type="FilterForWorkoutsBase[]">
+          Array of filter conditions where all must match
+        </ParamField>
+        
+        <ParamField path="NOT" type="FilterForWorkoutsBase[]">
+          Array of filter conditions to exclude
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use -1, 0, or any non-positive number to fetch all samples
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by start date. If true, oldest workouts first; if false, newest first
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="workouts" type="Promise<WorkoutProxy[]>">
+  Array of workout samples matching the query criteria. Each workout is a `WorkoutProxy` object with methods to access workout data and routes.
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryWorkoutSamples, WorkoutActivityType } from '@kingstinct/react-native-healthkit'
+
+// Query all running workouts
+const runningWorkouts = await queryWorkoutSamples({
+  filter: {
+    workoutActivityType: WorkoutActivityType.running,
+  },
+  limit: 10,
+  ascending: false, // newest first
+})
+
+console.log(`Found ${runningWorkouts.length} running workouts`)
+
+// Query workouts longer than 30 minutes
+const longWorkouts = await queryWorkoutSamples({
+  filter: {
+    duration: {
+      predicateOperator: 'greaterThan',
+      durationInSeconds: 1800, // 30 minutes
+    },
+  },
+  limit: -1, // fetch all
+})
+
+// Access workout data
+for (const workout of runningWorkouts) {
+  console.log('Workout:', {
+    type: workout.workoutActivityType,
+    duration: workout.duration,
+    distance: workout.totalDistance,
+    energyBurned: workout.totalEnergyBurned,
+    startDate: workout.startDate,
+  })
+}
+```
+
+---
+
+## queryWorkoutSamplesWithAnchor
+
+Query workout samples using an anchor to track changes and support pagination. This is useful for syncing data efficiently.
+
+### Signature
+
+```typescript
+function queryWorkoutSamplesWithAnchor(
+  options: WorkoutQueryOptionsWithAnchor
+): Promise<QueryWorkoutSamplesWithAnchorResponse>
+```
+
+### Parameters
+
+<ParamField path="options" type="WorkoutQueryOptionsWithAnchor" required>
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="filter" type="FilterForWorkouts">
+      Optional filter criteria (same as queryWorkoutSamples)
+    </ParamField>
+    
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use -1, 0, or any non-positive number to fetch all samples
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Anchor from previous query to fetch only new/changed data. Omit or pass undefined for initial query
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="response" type="Promise<QueryWorkoutSamplesWithAnchorResponse>">
+  <Expandable title="properties">
+    <ResponseField name="workouts" type="WorkoutProxy[]">
+      Array of new or updated workout samples since the anchor
+    </ResponseField>
+    
+    <ResponseField name="deletedSamples" type="DeletedSample[]">
+      Array of deleted sample UUIDs and deletion dates
+    </ResponseField>
+    
+    <ResponseField name="newAnchor" type="string">
+      New anchor value to use for the next query
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryWorkoutSamplesWithAnchor, WorkoutActivityType } from '@kingstinct/react-native-healthkit'
+
+// Initial query
+let anchor: string | undefined
+
+const initialResult = await queryWorkoutSamplesWithAnchor({
+  filter: {
+    workoutActivityType: WorkoutActivityType.running,
+  },
+  limit: 100,
+  anchor: undefined, // first query
+})
+
+console.log(`Initial: ${initialResult.workouts.length} workouts`)
+anchor = initialResult.newAnchor
+
+// Subsequent query - only gets changes since last query
+const updateResult = await queryWorkoutSamplesWithAnchor({
+  filter: {
+    workoutActivityType: WorkoutActivityType.running,
+  },
+  limit: 100,
+  anchor, // use saved anchor
+})
+
+console.log(`New workouts: ${updateResult.workouts.length}`)
+console.log(`Deleted workouts: ${updateResult.deletedSamples.length}`)
+anchor = updateResult.newAnchor // save for next time
+
+// Handle deletions
+for (const deleted of updateResult.deletedSamples) {
+  console.log(`Workout ${deleted.uuid} was deleted on ${deleted.deletedDate}`)
+}
+```
+
+<Note>
+  Anchored queries are ideal for syncing workout data efficiently. The anchor tracks the state of the HealthKit database, so subsequent queries only return changes since the last query.
+</Note>

@@ -1,0 +1,121 @@
+---
+title: "Date of Birth"
+description: "Get the user's date of birth from HealthKit"
+---
+
+## getDateOfBirth
+
+Retrieve the user's date of birth stored in HealthKit. This is a synchronous operation.
+
+### Signature
+
+```typescript
+function getDateOfBirth(): Date | undefined
+```
+
+### Returns
+
+<ResponseField name="dateOfBirth" type="Date | undefined">
+  The user's date of birth as a Date object, or undefined if not set
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDateOfBirth } from '@kingstinct/react-native-healthkit'
+
+const dateOfBirth = getDateOfBirth()
+
+if (dateOfBirth) {
+  const age = Math.floor(
+    (Date.now() - dateOfBirth.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+  )
+  console.log(`Date of birth: ${dateOfBirth.toLocaleDateString()}`)
+  console.log(`Age: ${age} years`)
+} else {
+  console.log('Date of birth not set')
+}
+```
+
+---
+
+## getDateOfBirthAsync
+
+Asynchronous version of getDateOfBirth. Use this if you need to await the result or want consistency with other async HealthKit operations.
+
+### Signature
+
+```typescript
+function getDateOfBirthAsync(): Promise<Date | undefined>
+```
+
+### Returns
+
+<ResponseField name="dateOfBirth" type="Promise<Date | undefined>">
+  Promise that resolves to the date of birth or undefined
+</ResponseField>
+
+### Example
+
+```typescript
+import { getDateOfBirthAsync } from '@kingstinct/react-native-healthkit'
+
+const dateOfBirth = await getDateOfBirthAsync()
+
+if (dateOfBirth) {
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  
+  console.log('User age:', age)
+  
+  // Check if user is adult
+  if (age >= 18) {
+    console.log('User is an adult')
+  } else {
+    console.log('User is a minor')
+  }
+} else {
+  console.log('Date of birth not available')
+}
+```
+
+### Example: Calculate Age in Months for Infants
+
+```typescript
+import { getDateOfBirthAsync } from '@kingstinct/react-native-healthkit'
+
+const dateOfBirth = await getDateOfBirthAsync()
+
+if (dateOfBirth) {
+  const ageInMonths = Math.floor(
+    (Date.now() - dateOfBirth.getTime()) / (30.44 * 24 * 60 * 60 * 1000)
+  )
+  
+  if (ageInMonths < 24) {
+    console.log(`Infant age: ${ageInMonths} months`)
+  }
+}
+```
+
+<Note>
+  Date of birth is a characteristic stored in the user's HealthKit profile. It cannot be changed by apps and is set by the user in the Health app settings or Medical ID.
+</Note>
+
+<Info>
+  You need to request read authorization for characteristics before accessing this data. This is typically done during initial app setup with `requestAuthorization`.
+</Info>
+
+<Warning>
+  Always handle the case where date of birth is undefined, as users may not have set this information in their HealthKit profile.
+</Warning>
+
+<Tip>
+  Date of birth is useful for age-based features, personalized health recommendations, and calculating age-adjusted metrics like VO2 max or target heart rate zones.
+</Tip>

@@ -1,0 +1,359 @@
+---
+title: 'useSources'
+description: 'React hook to query data sources for a HealthKit sample type'
+---
+
+## Overview
+
+The `useSources` hook fetches all data sources that have contributed data for a specific HealthKit sample type. This is useful for understanding which apps or devices have written data to HealthKit.
+
+## Usage
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+
+const sources = useSources('HKQuantityTypeIdentifierStepCount');
+```
+
+## Parameters
+
+<ParamField path="identifier" type="SampleTypeIdentifier" required>
+  The HealthKit sample type identifier (quantity, category, workout, etc.)
+</ParamField>
+
+## Return Value
+
+<ResponseField name="sources" type="readonly SourceProxy[] | null">
+  Array of source objects, or `null` if still loading.
+  
+  Each `SourceProxy` contains information about a data source.
+</ResponseField>
+
+## Source Properties
+
+```typescript
+interface SourceProxy {
+  readonly name: string;
+  readonly bundleIdentifier: string;
+}
+```
+
+- `name` - Display name of the source (e.g., "Apple Watch", "MyFitness App")
+- `bundleIdentifier` - Bundle ID of the app (e.g., "com.apple.Health")
+
+## Example: Display Data Sources
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+import { View, Text, FlatList } from 'react-native';
+
+function DataSources() {
+  const sources = useSources('HKQuantityTypeIdentifierStepCount');
+
+  if (!sources) {
+    return <Text>Loading sources...</Text>;
+  }
+
+  if (sources.length === 0) {
+    return <Text>No data sources found</Text>;
+  }
+
+  return (
+    <View>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+        Step Data Sources
+      </Text>
+      <FlatList
+        data={sources}
+        keyExtractor={(item) => item.bundleIdentifier}
+        renderItem={({ item }) => (
+          <View style={{ padding: 10, borderBottomWidth: 1, borderColor: '#eee' }}>
+            <Text style={{ fontWeight: '600' }}>{item.name}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              {item.bundleIdentifier}
+            </Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+```
+
+## Example: Multiple Data Types
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+import { View, Text, ScrollView } from 'react-native';
+
+function SourcesOverview() {
+  const stepSources = useSources('HKQuantityTypeIdentifierStepCount');
+  const heartRateSources = useSources('HKQuantityTypeIdentifierHeartRate');
+  const workoutSources = useSources('HKWorkoutTypeIdentifier');
+
+  const renderSourceList = (title: string, sources: readonly SourceProxy[] | null) => {
+    if (!sources) {
+      return <Text>Loading...</Text>;
+    }
+
+    return (
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>
+          {title} ({sources.length})
+        </Text>
+        {sources.map((source) => (
+          <Text key={source.bundleIdentifier} style={{ paddingLeft: 10, color: '#666' }}>
+            • {source.name}
+          </Text>
+        ))}
+      </View>
+    );
+  };
+
+  return (
+    <ScrollView style={{ padding: 20 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 15 }}>
+        Health Data Sources
+      </Text>
+      {renderSourceList('Steps', stepSources)}
+      {renderSourceList('Heart Rate', heartRateSources)}
+      {renderSourceList('Workouts', workoutSources)}
+    </ScrollView>
+  );
+}
+```
+
+## Example: Source Statistics
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+import { View, Text, StyleSheet } from 'react-native';
+
+function SourceStats() {
+  const sources = useSources('HKQuantityTypeIdentifierStepCount');
+
+  if (!sources) {
+    return <Text>Loading...</Text>;
+  }
+
+  const appleDevices = sources.filter(s => 
+    s.bundleIdentifier.startsWith('com.apple')
+  ).length;
+  
+  const thirdPartyApps = sources.length - appleDevices;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Step Data Sources</Text>
+      
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{sources.length}</Text>
+          <Text style={styles.statLabel}>Total Sources</Text>
+        </View>
+        
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{appleDevices}</Text>
+          <Text style={styles.statLabel}>Apple Devices</Text>
+        </View>
+        
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{thirdPartyApps}</Text>
+          <Text style={styles.statLabel}>Third-Party Apps</Text>
+        </View>
+      </View>
+      
+      <View style={{ marginTop: 20 }}>
+        {sources.map((source) => (
+          <View key={source.bundleIdentifier} style={styles.sourceItem}>
+            <Text style={styles.sourceName}>{source.name}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 15,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  stat: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  sourceItem: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  sourceName: {
+    fontSize: 14,
+  },
+});
+```
+
+## Example: Filter by Source
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+
+function SourceFilter() {
+  const sources = useSources('HKQuantityTypeIdentifierStepCount');
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+
+  if (!sources) {
+    return <Text>Loading sources...</Text>;
+  }
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+        Filter by Source
+      </Text>
+      
+      <FlatList
+        data={sources}
+        keyExtractor={(item) => item.bundleIdentifier}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={{
+              padding: 12,
+              backgroundColor: 
+                selectedSource === item.bundleIdentifier ? '#007AFF' : '#f0f0f0',
+              borderRadius: 8,
+              marginBottom: 8,
+            }}
+            onPress={() => setSelectedSource(item.bundleIdentifier)}
+          >
+            <Text
+              style={{
+                color: selectedSource === item.bundleIdentifier ? '#fff' : '#000',
+                fontWeight: '600',
+              }}
+            >
+              {item.name}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: selectedSource === item.bundleIdentifier ? '#fff' : '#666',
+              }}
+            >
+              {item.bundleIdentifier}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+      
+      {selectedSource && (
+        <View style={{ marginTop: 15, padding: 10, backgroundColor: '#e8f5e9', borderRadius: 8 }}>
+          <Text>Selected: {selectedSource}</Text>
+          {/* Now you can use selectedSource to filter query results */}
+        </View>
+      )}
+    </View>
+  );
+}
+```
+
+## Example: Source Icon Display
+
+```typescript
+import { useSources } from '@kingstinct/react-native-healthkit';
+import { View, Text, Image } from 'react-native';
+
+function SourcesWithIcons() {
+  const sources = useSources('HKQuantityTypeIdentifierHeartRate');
+
+  const getSourceIcon = (bundleId: string) => {
+    if (bundleId.includes('apple.Health')) return '❤️';
+    if (bundleId.includes('apple.Watch')) return '⌚';
+    if (bundleId.includes('fitness')) return '🏃';
+    return '📱';
+  };
+
+  if (!sources) return <Text>Loading...</Text>;
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>
+        Heart Rate Data Sources
+      </Text>
+      {sources.map((source) => (
+        <View
+          key={source.bundleIdentifier}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 12,
+            backgroundColor: '#f9f9f9',
+            borderRadius: 8,
+            marginBottom: 8,
+          }}
+        >
+          <Text style={{ fontSize: 32, marginRight: 12 }}>
+            {getSourceIcon(source.bundleIdentifier)}
+          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600' }}>
+              {source.name}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              {source.bundleIdentifier}
+            </Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+```
+
+## Use Cases
+
+- **Source Selection**: Allow users to filter data by specific sources
+- **Data Attribution**: Show users where their health data comes from
+- **Conflict Resolution**: Help users identify duplicate data from multiple sources
+- **App Discovery**: Show users which apps are contributing health data
+- **Data Quality**: Identify trusted sources for specific data types
+
+## Important Notes
+
+<Warning>
+**Authorization required.** You must request read authorization for the sample type before querying sources, or the query will fail.
+</Warning>
+
+<Note>
+The sources list only includes apps/devices that have actually written data for the specified type. Empty sources won't appear.
+</Note>
+
+## See Also
+
+- [querySources](/api/core/query-sources) - Imperative API
+- [queryQuantitySamples](/api/quantity/query-quantity-samples) - Query with source filters
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) - Request authorization

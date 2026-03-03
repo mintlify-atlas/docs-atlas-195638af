@@ -1,0 +1,86 @@
+---
+title: "Biological Sex"
+description: "Get the user's biological sex from HealthKit"
+---
+
+## getBiologicalSex
+
+Retrieve the user's biological sex stored in HealthKit. This is a synchronous operation.
+
+### Signature
+
+```typescript
+function getBiologicalSex(): BiologicalSex
+```
+
+### Returns
+
+<ResponseField name="biologicalSex" type="BiologicalSex">
+  The biological sex value as an enum:
+  - `BiologicalSex.notSet` (0) - Not set or unknown
+  - `BiologicalSex.female` (1) - Female
+  - `BiologicalSex.male` (2) - Male
+  - `BiologicalSex.other` (3) - Other
+</ResponseField>
+
+### Example
+
+```typescript
+import { getBiologicalSex, BiologicalSex } from '@kingstinct/react-native-healthkit'
+
+const sex = getBiologicalSex()
+
+switch (sex) {
+  case BiologicalSex.female:
+    console.log('Biological sex: Female')
+    break
+  case BiologicalSex.male:
+    console.log('Biological sex: Male')
+    break
+  case BiologicalSex.other:
+    console.log('Biological sex: Other')
+    break
+  case BiologicalSex.notSet:
+  default:
+    console.log('Biological sex: Not set')
+    break
+}
+```
+
+---
+
+## getBiologicalSexAsync
+
+Asynchronous version of getBiologicalSex. Use this if you need to await the result or want consistency with other async HealthKit operations.
+
+### Signature
+
+```typescript
+function getBiologicalSexAsync(): Promise<BiologicalSex>
+```
+
+### Returns
+
+<ResponseField name="biologicalSex" type="Promise<BiologicalSex>">
+  Promise that resolves to the biological sex value
+</ResponseField>
+
+### Example
+
+```typescript
+import { getBiologicalSexAsync, BiologicalSex } from '@kingstinct/react-native-healthkit'
+
+const sex = await getBiologicalSexAsync()
+
+if (sex === BiologicalSex.female) {
+  console.log('User is female')
+}
+```
+
+<Note>
+  Biological sex is a characteristic stored in the user's HealthKit profile. It cannot be changed by apps and is set by the user in the Health app settings.
+</Note>
+
+<Info>
+  You need to request read authorization for characteristics before accessing this data. This is typically done during initial app setup with `requestAuthorization`.
+</Info>

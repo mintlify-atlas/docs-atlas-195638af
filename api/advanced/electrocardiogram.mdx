@@ -1,0 +1,184 @@
+---
+title: 'Electrocardiogram'
+description: 'Query electrocardiogram (ECG) samples from HealthKit'
+---
+
+## Overview
+
+Electrocardiogram (ECG) data is captured by Apple Watch and stored in HealthKit. ECG samples include classification, symptoms status, average heart rate, voltage measurements, and sampling frequency.
+
+## Functions
+
+### queryElectrocardiogramSamples
+
+Query electrocardiogram samples with optional voltage data.
+
+```typescript
+import { queryElectrocardiogramSamples } from '@kingstinct/react-native-healthkit';
+
+const ecgs = await queryElectrocardiogramSamples({
+  includeVoltages: true,
+  limit: 20,
+  ascending: false,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="ECGQueryOptionsWithSortOrder">
+  Query options for ECG samples
+  
+  <Expandable title="properties">
+    <ParamField path="includeVoltages" type="boolean" default="false">
+      Whether to include voltage measurements in the response. Voltage data can be large, so it's excluded by default.
+    </ParamField>
+    
+    <ParamField path="limit" type="number" default="20">
+      Maximum number of samples to return
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by date
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+Returns a Promise resolving to an array of `ElectrocardiogramSample` objects.
+
+```typescript
+interface ElectrocardiogramSample {
+  readonly uuid: string;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly classification: ElectrocardiogramClassification;
+  readonly symptomsStatus: ElectrocardiogramSymptomsStatus;
+  readonly averageHeartRateBpm?: number;
+  readonly samplingFrequencyHz?: number;
+  readonly numberOfVoltageMeasurements: number;
+  readonly voltages?: ElectrocardiogramVoltage[];
+}
+```
+
+**Classification types:**
+- `notSet` - No classification
+- `sinusRhythm` - Normal sinus rhythm
+- `atrialFibrillation` - AFib detected
+- `inconclusiveLowHeartRate` - Inconclusive due to low heart rate
+- `inconclusiveHighHeartRate` - Inconclusive due to high heart rate
+- `inconclusivePoorReading` - Inconclusive due to poor reading
+- `inconclusiveOther` - Inconclusive for other reasons
+
+**Symptoms status:**
+- `notSet` - Not specified
+- `none` - No symptoms
+- `present` - Symptoms present
+
+### queryElectrocardiogramSamplesWithAnchor
+
+Query ECG samples with anchor-based pagination for syncing data efficiently.
+
+```typescript
+import { queryElectrocardiogramSamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+// Initial query
+const { samples, deletedSamples, newAnchor } = await queryElectrocardiogramSamplesWithAnchor({
+  includeVoltages: false,
+  limit: 20,
+});
+
+// Subsequent query to get only changes
+const nextResult = await queryElectrocardiogramSamplesWithAnchor({
+  includeVoltages: false,
+  limit: 20,
+  anchor: newAnchor,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="ECGQueryOptionsWithAnchor">
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="includeVoltages" type="boolean" required>
+      Whether to include voltage measurements. Must be explicitly set when using anchors.
+    </ParamField>
+    
+    <ParamField path="limit" type="number" default="0">
+      Maximum number of samples to return. Set to 0 for no limit.
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Base64-encoded anchor from previous query. Omit for initial query.
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+```typescript
+interface ElectrocardiogramSamplesWithAnchorResponse {
+  readonly samples: readonly ElectrocardiogramSample[];
+  readonly deletedSamples: readonly DeletedSample[];
+  readonly newAnchor: string;
+}
+```
+
+<ResponseField name="samples" type="ElectrocardiogramSample[]">
+  New or modified ECG samples since the last anchor
+</ResponseField>
+
+<ResponseField name="deletedSamples" type="DeletedSample[]">
+  Samples that were deleted since the last anchor
+</ResponseField>
+
+<ResponseField name="newAnchor" type="string">
+  Base64-encoded anchor to use for the next query
+</ResponseField>
+
+## Usage Example
+
+```typescript
+import { 
+  queryElectrocardiogramSamples,
+  requestAuthorization 
+} from '@kingstinct/react-native-healthkit';
+
+// Request authorization first
+await requestAuthorization({ 
+  toRead: ['HKCategoryTypeIdentifierElectrocardiogram'] 
+});
+
+// Query ECG samples with voltage data
+const ecgs = await queryElectrocardiogramSamples({
+  includeVoltages: true,
+  limit: 20,
+});
+
+ecgs.forEach((ecg) => {
+  console.log(`Classification: ${ecg.classification}`);
+  console.log(`Average HR: ${ecg.averageHeartRateBpm} BPM`);
+  console.log(`Voltage measurements: ${ecg.numberOfVoltageMeasurements}`);
+  
+  if (ecg.voltages) {
+    ecg.voltages.forEach((v) => {
+      console.log(`Time: ${v.timeSinceSampleStart}s, Voltage: ${v.voltage}V`);
+    });
+  }
+});
+```
+
+## See Also
+
+- [Apple HealthKit ECG Documentation](https://developer.apple.com/documentation/healthkit/hkelectrocardiogram)
+- [queryHeartbeatSeriesSamples](/api/advanced/heartbeat-series) - Related heart data

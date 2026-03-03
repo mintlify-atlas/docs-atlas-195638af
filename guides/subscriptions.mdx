@@ -1,0 +1,264 @@
+---
+title: Subscriptions
+description: Learn how to subscribe to HealthKit data changes with observer queries
+---
+
+React Native HealthKit provides subscription APIs to monitor health data changes in real-time. When data changes in HealthKit, your app receives notifications to refetch updated data.
+
+## Subscribe to changes
+
+Use `subscribeToChanges` to listen for updates to specific data types:
+
+```typescript
+import { subscribeToChanges } from '@kingstinct/react-native-healthkit';
+
+const subscription = subscribeToChanges('HKQuantityTypeIdentifierHeartRate', () => {
+  // This callback is called whenever heart rate data changes
+  console.log('Heart rate data updated');
+  // Refetch your data here
+});
+
+// Later, unsubscribe when done
+subscription.remove();
+```
+
+<Note>
+You must request authorization before subscribing to changes. The subscription will not work without proper read permissions.
+</Note>
+
+## Using subscriptions with state
+
+Combine subscriptions with data queries to keep your UI synchronized:
+
+```typescript
+import { useEffect, useState } from 'react';
+import { 
+  subscribeToChanges, 
+  getMostRecentQuantitySample 
+} from '@kingstinct/react-native-healthkit';
+
+function HeartRateMonitor() {
+  const [heartRate, setHeartRate] = useState(null);
+  
+  const fetchHeartRate = async () => {
+    const sample = await getMostRecentQuantitySample('HKQuantityTypeIdentifierHeartRate');
+    setHeartRate(sample);
+  };
+  
+  useEffect(() => {
+    fetchHeartRate();
+    
+    const subscription = subscribeToChanges(
+      'HKQuantityTypeIdentifierHeartRate',
+      fetchHeartRate
+    );
+    
+    return () => subscription.remove();
+  }, []);
+  
+  return heartRate ? (
+    <Text>{heartRate.quantity} {heartRate.unit}</Text>
+  ) : null;
+}
+```
+
+## useSubscribeToChanges hook
+
+For React components, use the `useSubscribeToChanges` hook for automatic lifecycle management:
+
+```typescript
+import { useEffect, useState, useCallback } from 'react';
+import { 
+  useSubscribeToChanges, 
+  getMostRecentQuantitySample 
+} from '@kingstinct/react-native-healthkit';
+
+function StepCounter() {
+  const [steps, setSteps] = useState(null);
+  
+  const fetchSteps = useCallback(async () => {
+    const sample = await getMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+    setSteps(sample);
+  }, []);
+  
+  useEffect(() => {
+    fetchSteps();
+  }, [fetchSteps]);
+  
+  // Automatically subscribes and unsubscribes
+  useSubscribeToChanges('HKQuantityTypeIdentifierStepCount', fetchSteps);
+  
+  return steps ? (
+    <Text>{steps.quantity} steps</Text>
+  ) : null;
+}
+```
+
+<Tip>
+The `useSubscribeToChanges` hook automatically handles subscription cleanup when the component unmounts, preventing memory leaks.
+</Tip>
+
+## Subscribe to quantity samples
+
+For more granular control over quantity data updates:
+
+```typescript
+import { subscribeToQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+const subscription = subscribeToQuantitySamples(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  (samples) => {
+    console.log('New blood glucose samples:', samples);
+    // Process the new samples
+  }
+);
+
+// Cleanup
+subscription.remove();
+```
+
+## Subscribe to category samples
+
+Monitor changes to category data like sleep analysis:
+
+```typescript
+import { subscribeToCategorySamples } from '@kingstinct/react-native-healthkit';
+
+const subscription = subscribeToCategorySamples(
+  'HKCategoryTypeIdentifierSleepAnalysis',
+  (samples) => {
+    console.log('Sleep data updated:', samples);
+    // Update your UI with new sleep data
+  }
+);
+
+// Cleanup
+subscription.remove();
+```
+
+## Authorization timing
+
+Ensure authorization is complete before subscribing:
+
+```typescript
+import { useEffect, useState } from 'react';
+import { requestAuthorization, subscribeToChanges } from '@kingstinct/react-native-healthkit';
+
+function DataMonitor() {
+  const [hasRequestedAuthorization, setHasRequestedAuthorization] = useState(false);
+  
+  useEffect(() => {
+    requestAuthorization({ 
+      toRead: ['HKQuantityTypeIdentifierHeartRate'] 
+    }).then(() => {
+      setHasRequestedAuthorization(true);
+    });
+  }, []);
+  
+  useEffect(() => {
+    if (hasRequestedAuthorization) {
+      const unsubscribe = subscribeToChanges(
+        'HKQuantityTypeIdentifierHeartRate',
+        () => {
+          // Refetch data
+        }
+      );
+
+      return () => unsubscribe.remove();
+    }
+  }, [hasRequestedAuthorization]);
+  
+  return <View>...</View>;
+}
+```
+
+<Warning>
+Do not subscribe to data changes before requesting authorization. This will cause your app to crash.
+</Warning>
+
+## Background delivery
+
+Enable background delivery to receive updates even when your app is not running:
+
+```typescript
+import { enableBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+// Enable background delivery for step count
+await enableBackgroundDelivery('HKQuantityTypeIdentifierStepCount', 'immediate');
+
+// Update frequencies: 'immediate', 'hourly', 'daily', 'weekly'
+```
+
+Disable background delivery when no longer needed:
+
+```typescript
+import { disableBackgroundDelivery, disableAllBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+// Disable for specific type
+await disableBackgroundDelivery('HKQuantityTypeIdentifierStepCount');
+
+// Disable all background delivery
+await disableAllBackgroundDelivery();
+```
+
+<Note>
+Background delivery requires the HealthKit background capability to be enabled in your app configuration.
+</Note>
+
+## Subscription callback arguments
+
+Subscription callbacks receive information about what changed:
+
+```typescript
+import type { OnChangeCallbackArgs } from '@kingstinct/react-native-healthkit';
+
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', (args: OnChangeCallbackArgs) => {
+  console.log('Samples added:', args.addedSamples);
+  console.log('Samples deleted:', args.deletedSamples);
+  // Refetch data based on what changed
+});
+```
+
+## Multiple subscriptions
+
+You can subscribe to multiple data types simultaneously:
+
+```typescript
+const subscriptions = [
+  subscribeToChanges('HKQuantityTypeIdentifierStepCount', fetchSteps),
+  subscribeToChanges('HKQuantityTypeIdentifierHeartRate', fetchHeartRate),
+  subscribeToChanges('HKCategoryTypeIdentifierSleepAnalysis', fetchSleep),
+];
+
+// Cleanup all subscriptions
+subscriptions.forEach(sub => sub.remove());
+```
+
+## Hooks with automatic subscriptions
+
+Several hooks include built-in subscriptions:
+
+```typescript
+import { 
+  useMostRecentQuantitySample,
+  useMostRecentCategorySample,
+  useMostRecentWorkout,
+  useStatisticsForQuantity
+} from '@kingstinct/react-native-healthkit';
+
+// These hooks automatically subscribe and refetch when data changes
+const stepSample = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+const sleepSample = useMostRecentCategorySample('HKCategoryTypeIdentifierSleepAnalysis');
+const lastWorkout = useMostRecentWorkout();
+
+const statistics = useStatisticsForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  new Date(2024, 0, 1),
+  new Date()
+);
+```
+
+<Tip>
+When using hooks like `useMostRecentQuantitySample`, you don't need to manually subscribe to changes. The hooks handle subscriptions automatically.
+</Tip>

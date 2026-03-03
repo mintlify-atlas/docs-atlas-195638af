@@ -1,0 +1,655 @@
+---
+title: 'Quantity Type Identifiers'
+description: 'Complete reference of all HealthKit quantity type identifiers'
+---
+
+HealthKit supports over 100 quantity type identifiers for tracking various health and fitness metrics. This page documents all available identifiers, organized by category.
+
+## Activity & Fitness
+
+### Steps & Distance
+
+<ParamField path="HKQuantityTypeIdentifierStepCount" type="Writeable">
+  Number of steps taken. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceWalkingRunning" type="Writeable">
+  Distance traveled while walking or running. Unit: `m`, `ft`, `mi`, `km`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceCycling" type="Writeable">
+  Distance traveled while cycling. Unit: `m`, `ft`, `mi`, `km`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceWheelchair" type="Writeable">
+  Distance traveled in a wheelchair. Unit: `m`, `ft`, `mi`, `km`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceSwimming" type="Writeable">
+  Distance traveled while swimming. Unit: `m`, `ft`, `mi`, `km`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceDownhillSnowSports" type="Writeable">
+  Distance traveled during downhill snow sports. Unit: `m`, `ft`, `mi`, `km`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceCrossCountrySkiing" type="Writeable">
+  Distance traveled while cross-country skiing. Unit: `m`, `ft`, `mi`, `km`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistancePaddleSports" type="Writeable">
+  Distance traveled during paddle sports. Unit: `m`, `ft`, `mi`, `km`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceRowing" type="Writeable">
+  Distance traveled while rowing. Unit: `m`, `ft`, `mi`, `km`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDistanceSkatingSports" type="Writeable">
+  Distance traveled during skating sports. Unit: `m`, `ft`, `mi`, `km`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+### Energy & Activity Time
+
+<ParamField path="HKQuantityTypeIdentifierActiveEnergyBurned" type="Writeable">
+  Active energy burned during activity. Unit: `kcal`, `kJ`, `Cal`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBasalEnergyBurned" type="Writeable">
+  Basal (resting) energy burned. Unit: `kcal`, `kJ`, `Cal`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleExerciseTime" type="Read-only">
+  Exercise time as measured by Apple Watch. Unit: `min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleStandTime" type="Read-only">
+  Stand time as measured by Apple Watch. Unit: `min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleMoveTime" type="Writeable">
+  Move time for users in wheelchair mode. Unit: `min`
+  
+  <Note>Available on iOS 14.5+</Note>
+</ParamField>
+
+### Exercise Metrics
+
+<ParamField path="HKQuantityTypeIdentifierFlightsClimbed" type="Writeable">
+  Number of flights of stairs climbed. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierPushCount" type="Writeable">
+  Number of wheelchair pushes. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierSwimmingStrokeCount" type="Writeable">
+  Number of swimming strokes. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierVO2Max" type="Writeable">
+  Maximum oxygen consumption during exercise. Unit: `mL/(kg·min)`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierNikeFuel" type="Writeable">
+  Nike Fuel points earned. Unit: `count`
+</ParamField>
+
+### Running Metrics
+
+<ParamField path="HKQuantityTypeIdentifierRunningSpeed" type="Writeable">
+  Running speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRunningPower" type="Writeable">
+  Running power output. Unit: `W`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRunningStrideLength" type="Writeable">
+  Running stride length. Unit: `m`, `ft`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRunningVerticalOscillation" type="Writeable">
+  Vertical oscillation while running. Unit: `cm`, `in`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRunningGroundContactTime" type="Writeable">
+  Ground contact time while running. Unit: `ms`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+### Cycling Metrics
+
+<ParamField path="HKQuantityTypeIdentifierCyclingSpeed" type="Writeable">
+  Cycling speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierCyclingPower" type="Writeable">
+  Cycling power output. Unit: `W`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierCyclingCadence" type="Writeable">
+  Cycling cadence (pedal revolutions). Unit: `count/min`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierCyclingFunctionalThresholdPower" type="Writeable">
+  Functional threshold power for cycling. Unit: `W`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+### Other Sports
+
+<ParamField path="HKQuantityTypeIdentifierCrossCountrySkiingSpeed" type="Writeable">
+  Cross-country skiing speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierPaddleSportsSpeed" type="Writeable">
+  Paddle sports speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRowingSpeed" type="Writeable">
+  Rowing speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+### Workout Effort
+
+<ParamField path="HKQuantityTypeIdentifierPhysicalEffort" type="Writeable">
+  Physical effort score. Unit: `count`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWorkoutEffortScore" type="Writeable">
+  Workout effort score. Unit: `count`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierEstimatedWorkoutEffortScore" type="Writeable">
+  Estimated workout effort score. Unit: `count`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+## Body Measurements
+
+<ParamField path="HKQuantityTypeIdentifierBodyMass" type="Writeable">
+  Body weight. Unit: `kg`, `lb`, `st`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBodyMassIndex" type="Writeable">
+  Body mass index (BMI). Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBodyFatPercentage" type="Writeable">
+  Body fat percentage. Unit: `%`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierLeanBodyMass" type="Writeable">
+  Lean body mass. Unit: `kg`, `lb`, `st`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierHeight" type="Writeable">
+  Height. Unit: `m`, `cm`, `ft`, `in`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWaistCircumference" type="Writeable">
+  Waist circumference. Unit: `m`, `cm`, `ft`, `in`
+</ParamField>
+
+## Vital Signs
+
+### Heart
+
+<ParamField path="HKQuantityTypeIdentifierHeartRate" type="Writeable">
+  Heart rate. Unit: `count/min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierRestingHeartRate" type="Writeable">
+  Resting heart rate. Unit: `count/min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWalkingHeartRateAverage" type="Read-only">
+  Average heart rate while walking. Unit: `count/min`
+  
+  <Note>Available on iOS 11+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" type="Writeable">
+  Heart rate variability (SDNN). Unit: `ms`
+  
+  <Note>Available on iOS 11+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierHeartRateRecoveryOneMinute" type="Writeable">
+  Heart rate recovery after one minute. Unit: `count/min`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAtrialFibrillationBurden" type="Read-only">
+  Atrial fibrillation burden percentage. Unit: `%`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+### Blood Pressure
+
+<ParamField path="HKQuantityTypeIdentifierBloodPressureSystolic" type="Writeable">
+  Systolic blood pressure. Unit: `mmHg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBloodPressureDiastolic" type="Writeable">
+  Diastolic blood pressure. Unit: `mmHg`
+</ParamField>
+
+### Respiratory
+
+<ParamField path="HKQuantityTypeIdentifierRespiratoryRate" type="Writeable">
+  Respiratory rate. Unit: `count/min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierOxygenSaturation" type="Writeable">
+  Blood oxygen saturation. Unit: `%`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierPeripheralPerfusionIndex" type="Writeable">
+  Peripheral perfusion index. Unit: `%`
+</ParamField>
+
+### Temperature
+
+<ParamField path="HKQuantityTypeIdentifierBodyTemperature" type="Writeable">
+  Body temperature. Unit: `degC`, `degF`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBasalBodyTemperature" type="Writeable">
+  Basal body temperature. Unit: `degC`, `degF`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleSleepingWristTemperature" type="Writeable">
+  Sleeping wrist temperature (Apple Watch). Unit: `degC`, `degF`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWaterTemperature" type="Writeable">
+  Water temperature. Unit: `degC`, `degF`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+## Laboratory & Clinical
+
+### Blood Glucose
+
+<ParamField path="HKQuantityTypeIdentifierBloodGlucose" type="Writeable">
+  Blood glucose level. Unit: `mg/dL`, `mmol/L`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierBloodKetones" type="Writeable">
+  Blood ketone level. Unit: `mmol/L`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierInsulinDelivery" type="Writeable">
+  Insulin delivery amount. Unit: `IU`
+  
+  <Note>Available on iOS 11+</Note>
+</ParamField>
+
+### Other Lab Values
+
+<ParamField path="HKQuantityTypeIdentifierBloodAlcoholContent" type="Writeable">
+  Blood alcohol content. Unit: `%`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierElectrodermalActivity" type="Writeable">
+  Electrodermal activity (skin conductance). Unit: `S` (siemens)
+</ParamField>
+
+## Respiratory Function
+
+<ParamField path="HKQuantityTypeIdentifierForcedVitalCapacity" type="Writeable">
+  Forced vital capacity. Unit: `L`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierForcedExpiratoryVolume1" type="Writeable">
+  Forced expiratory volume in 1 second (FEV1). Unit: `L`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierPeakExpiratoryFlowRate" type="Writeable">
+  Peak expiratory flow rate. Unit: `L/min`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierInhalerUsage" type="Writeable">
+  Number of inhaler puffs. Unit: `count`
+</ParamField>
+
+## Nutrition
+
+### Macronutrients
+
+<ParamField path="HKQuantityTypeIdentifierDietaryEnergyConsumed" type="Writeable">
+  Dietary energy consumed. Unit: `kcal`, `kJ`, `Cal`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryProtein" type="Writeable">
+  Protein consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryCarbohydrates" type="Writeable">
+  Carbohydrates consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFiber" type="Writeable">
+  Dietary fiber consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietarySugar" type="Writeable">
+  Sugar consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFatTotal" type="Writeable">
+  Total fat consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFatSaturated" type="Writeable">
+  Saturated fat consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFatMonounsaturated" type="Writeable">
+  Monounsaturated fat consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFatPolyunsaturated" type="Writeable">
+  Polyunsaturated fat consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryCholesterol" type="Writeable">
+  Cholesterol consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+### Vitamins
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminA" type="Writeable">
+  Vitamin A consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminB6" type="Writeable">
+  Vitamin B6 consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminB12" type="Writeable">
+  Vitamin B12 consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminC" type="Writeable">
+  Vitamin C consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminD" type="Writeable">
+  Vitamin D consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminE" type="Writeable">
+  Vitamin E consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryVitaminK" type="Writeable">
+  Vitamin K consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryThiamin" type="Writeable">
+  Thiamin (Vitamin B1) consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryRiboflavin" type="Writeable">
+  Riboflavin (Vitamin B2) consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryNiacin" type="Writeable">
+  Niacin (Vitamin B3) consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryFolate" type="Writeable">
+  Folate consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryBiotin" type="Writeable">
+  Biotin consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryPantothenicAcid" type="Writeable">
+  Pantothenic acid consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+### Minerals
+
+<ParamField path="HKQuantityTypeIdentifierDietaryCalcium" type="Writeable">
+  Calcium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryIron" type="Writeable">
+  Iron consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryMagnesium" type="Writeable">
+  Magnesium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryPhosphorus" type="Writeable">
+  Phosphorus consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryPotassium" type="Writeable">
+  Potassium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietarySodium" type="Writeable">
+  Sodium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryZinc" type="Writeable">
+  Zinc consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryIodine" type="Writeable">
+  Iodine consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietarySelenium" type="Writeable">
+  Selenium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryCopper" type="Writeable">
+  Copper consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryManganese" type="Writeable">
+  Manganese consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryChromium" type="Writeable">
+  Chromium consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryMolybdenum" type="Writeable">
+  Molybdenum consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryChloride" type="Writeable">
+  Chloride consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+### Hydration & Other
+
+<ParamField path="HKQuantityTypeIdentifierDietaryWater" type="Writeable">
+  Water consumed. Unit: `mL`, `L`, `fl_oz_us`, `fl_oz_imp`, `cup_us`, `cup_imp`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierDietaryCaffeine" type="Writeable">
+  Caffeine consumed. Unit: `g`, `mg`, `μg`
+</ParamField>
+
+## Mobility
+
+<ParamField path="HKQuantityTypeIdentifierWalkingSpeed" type="Writeable">
+  Walking speed. Unit: `m/s`, `km/h`, `mi/h`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWalkingStepLength" type="Writeable">
+  Walking step length. Unit: `m`, `cm`, `ft`, `in`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWalkingAsymmetryPercentage" type="Writeable">
+  Walking asymmetry percentage. Unit: `%`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierWalkingDoubleSupportPercentage" type="Writeable">
+  Walking double support percentage. Unit: `%`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierStairAscentSpeed" type="Writeable">
+  Stair ascent speed. Unit: `m/s`, `ft/s`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierStairDescentSpeed" type="Writeable">
+  Stair descent speed. Unit: `m/s`, `ft/s`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierSixMinuteWalkTestDistance" type="Writeable">
+  Distance walked in six-minute walk test. Unit: `m`, `ft`, `mi`, `km`
+  
+  <Note>Available on iOS 14+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleWalkingSteadiness" type="Read-only">
+  Apple Walking Steadiness score. Unit: `%`
+  
+  <Note>Available on iOS 15+</Note>
+</ParamField>
+
+## Environmental
+
+<ParamField path="HKQuantityTypeIdentifierUVExposure" type="Writeable">
+  UV exposure index. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierTimeInDaylight" type="Writeable">
+  Time spent in daylight. Unit: `min`
+  
+  <Note>Available on iOS 17+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierEnvironmentalAudioExposure" type="Writeable">
+  Environmental audio exposure. Unit: `dBASPL`
+  
+  <Note>Available on iOS 13+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierHeadphoneAudioExposure" type="Writeable">
+  Headphone audio exposure. Unit: `dBASPL`
+  
+  <Note>Available on iOS 13+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierEnvironmentalSoundReduction" type="Writeable">
+  Environmental sound reduction (e.g., from hearing protection). Unit: `dBASPL`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+## Other Health Metrics
+
+<ParamField path="HKQuantityTypeIdentifierNumberOfTimesFallen" type="Writeable">
+  Number of falls detected. Unit: `count`
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierNumberOfAlcoholicBeverages" type="Writeable">
+  Number of alcoholic beverages consumed. Unit: `count`
+  
+  <Note>Available on iOS 15+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierUnderwaterDepth" type="Writeable">
+  Underwater depth. Unit: `m`, `ft`
+  
+  <Note>Available on iOS 16+</Note>
+</ParamField>
+
+<ParamField path="HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances" type="Writeable">
+  Sleeping breathing disturbances. Unit: `count`
+  
+  <Note>Available on iOS 18+</Note>
+</ParamField>
+
+## Read-only vs Writeable
+
+Most quantity types are **writeable**, meaning third-party apps can save data to them using `saveQuantitySample()`. However, some types are **read-only** and can only be written by Apple's own apps and devices:
+
+- `HKQuantityTypeIdentifierAppleExerciseTime`
+- `HKQuantityTypeIdentifierAppleStandTime`
+- `HKQuantityTypeIdentifierWalkingHeartRateAverage`
+- `HKQuantityTypeIdentifierAppleWalkingSteadiness`
+- `HKQuantityTypeIdentifierAtrialFibrillationBurden`
+
+The TypeScript types distinguish between these with `QuantityTypeIdentifierWriteable` and `QuantityTypeIdentifierReadOnly`.
+
+## iOS Version Availability
+
+Some quantity types are only available on newer iOS versions:
+
+- **iOS 11+**: Heart rate variability, insulin delivery, walking heart rate average
+- **iOS 13+**: Environmental and headphone audio exposure
+- **iOS 14+**: Mobility metrics, six-minute walk test
+- **iOS 14.5+**: Apple Move Time
+- **iOS 15+**: Walking steadiness, number of alcoholic beverages
+- **iOS 16+**: Running metrics, heart rate recovery, underwater depth, water temperature, environmental sound reduction
+- **iOS 17+**: Cycling metrics, time in daylight, physical effort, sleeping wrist temperature
+- **iOS 18+**: Additional distance sports, workout effort scores, sleeping breathing disturbances
+
+<Tip>
+  Use `isObjectTypeAvailable()` to check if a specific quantity type is available on the current device before requesting authorization or querying data.
+</Tip>

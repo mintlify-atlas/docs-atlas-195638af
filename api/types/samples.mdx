@@ -1,0 +1,481 @@
+---
+title: "Sample Types"
+description: "HealthKit sample data structures including quantity, category, workout, and correlation samples"
+---
+
+## Overview
+
+HealthKit samples represent health and fitness data points. Each sample type extends the base sample structure and includes type-specific properties. Samples are the fundamental data structures returned by HealthKit queries.
+
+## BaseSample
+
+Base interface inherited by all sample types.
+
+```typescript
+interface BaseSample extends BaseObject {
+  sampleType: SampleType
+  startDate: Date
+  endDate: Date
+  hasUndeterminedDuration: boolean
+  
+  // Metadata fields
+  metadataWeatherCondition?: WeatherCondition
+  metadataWeatherHumidity?: Quantity
+  metadataWeatherTemperature?: Quantity
+  metadataInsulinDeliveryReason?: InsulinDeliveryReason
+  metadataHeartRateMotionContext?: HeartRateMotionContext
+}
+```
+
+<ResponseField name="sampleType" type="SampleType" required>
+  The type of sample, including metadata about restrictions and capabilities.
+</ResponseField>
+
+<ResponseField name="startDate" type="Date" required>
+  The start date and time of the sample.
+</ResponseField>
+
+<ResponseField name="endDate" type="Date" required>
+  The end date and time of the sample.
+</ResponseField>
+
+<ResponseField name="hasUndeterminedDuration" type="boolean" required>
+  Whether the sample has an undetermined duration.
+</ResponseField>
+
+### Inherited from BaseObject
+
+<ResponseField name="uuid" type="string" required>
+  Unique identifier for the sample.
+</ResponseField>
+
+<ResponseField name="sourceRevision" type="SourceRevision" required>
+  Information about the source that created this sample.
+</ResponseField>
+
+<ResponseField name="device" type="Device" optional>
+  The device that recorded this sample.
+</ResponseField>
+
+<ResponseField name="metadata" type="AnyMap" required>
+  Raw metadata dictionary containing additional information.
+</ResponseField>
+
+## QuantitySample
+
+Represents a sample with a numerical value and unit.
+
+```typescript
+interface QuantitySample extends BaseSample {
+  quantityType: QuantityTypeIdentifier
+  quantity: number
+  unit: string
+}
+```
+
+<ResponseField name="quantityType" type="QuantityTypeIdentifier" required>
+  The type of quantity (e.g., `'HKQuantityTypeIdentifierStepCount'`, `'HKQuantityTypeIdentifierHeartRate'`).
+</ResponseField>
+
+<ResponseField name="quantity" type="number" required>
+  The numerical value of the sample.
+</ResponseField>
+
+<ResponseField name="unit" type="string" required>
+  The unit of measurement (e.g., `'count'`, `'count/min'`). See [Units](/api/types/units) for details.
+</ResponseField>
+
+### Example
+
+```typescript
+const heartRateSample: QuantitySample = {
+  uuid: '12345-abcde',
+  quantityType: 'HKQuantityTypeIdentifierHeartRate',
+  quantity: 72,
+  unit: 'count/min',
+  startDate: new Date('2024-03-01T10:00:00Z'),
+  endDate: new Date('2024-03-01T10:00:00Z'),
+  // ... other BaseSample fields
+}
+```
+
+## QuantitySampleForSaving
+
+Structure for creating new quantity samples.
+
+```typescript
+interface QuantitySampleForSaving {
+  startDate: Date
+  endDate: Date
+  quantityType: QuantityTypeIdentifier
+  quantity: number
+  unit: string
+  metadata?: AnyMap
+  sourceRevision?: SourceRevision
+}
+```
+
+### Example
+
+```typescript
+const newStepsSample: QuantitySampleForSaving = {
+  startDate: new Date('2024-03-01T10:00:00Z'),
+  endDate: new Date('2024-03-01T11:00:00Z'),
+  quantityType: 'HKQuantityTypeIdentifierStepCount',
+  quantity: 1000,
+  unit: 'count',
+  metadata: {
+    HKWasUserEntered: true
+  }
+}
+```
+
+## CategorySample
+
+Represents categorical data with predefined values.
+
+```typescript
+interface CategorySample extends BaseSample {
+  categoryType: CategoryTypeIdentifier
+  value: CategoryValue
+}
+```
+
+<ResponseField name="categoryType" type="CategoryTypeIdentifier" required>
+  The category type identifier (e.g., `'HKCategoryTypeIdentifierSleepAnalysis'`).
+</ResponseField>
+
+<ResponseField name="value" type="CategoryValue" required>
+  The categorical value. Type depends on the category type (see [CategoryValue](#categoryvalue)).
+</ResponseField>
+
+### CategoryValue
+
+Category values vary by type:
+
+```typescript
+type CategoryValue =
+  | CategoryValueAppetiteChanges
+  | CategoryValueCervicalMucusQuality
+  | CategoryValueMenstrualFlow
+  | CategoryValueOvulationTestResult
+  | CategoryValuePresence
+  | CategoryValueSeverity
+  | CategoryValueSleepAnalysis
+  | number
+```
+
+#### CategoryValueSleepAnalysis
+
+```typescript
+enum CategoryValueSleepAnalysis {
+  inBed = 0,
+  asleepUnspecified = 1,
+  awake = 2,
+  asleepCore = 3,
+  asleepDeep = 4,
+  asleepREM = 5,
+}
+```
+
+#### CategoryValueSeverity
+
+```typescript
+enum CategoryValueSeverity {
+  notPresent = 1,
+  mild = 2,
+  moderate = 3,
+  severe = 4,
+  unspecified = 0,
+}
+```
+
+#### CategoryValuePresence
+
+```typescript
+enum CategoryValuePresence {
+  notPresent = 1,
+  present = 0,
+}
+```
+
+### Example
+
+```typescript
+const sleepSample: CategorySample = {
+  uuid: '67890-fghij',
+  categoryType: 'HKCategoryTypeIdentifierSleepAnalysis',
+  value: CategoryValueSleepAnalysis.asleepDeep,
+  startDate: new Date('2024-03-01T23:00:00Z'),
+  endDate: new Date('2024-03-02T07:00:00Z'),
+  // ... other BaseSample fields
+}
+```
+
+## WorkoutSample
+
+Represents a workout or physical activity session.
+
+```typescript
+interface WorkoutSample extends BaseSample {
+  workoutActivityType: WorkoutActivityType
+  duration: Quantity
+  totalEnergyBurned?: Quantity
+  totalDistance?: Quantity
+  totalSwimmingStrokeCount?: Quantity
+  totalFlightsClimbed?: Quantity
+  events?: readonly WorkoutEvent[]
+  activities?: readonly WorkoutActivity[]
+  
+  // Metadata
+  metadataAverageMETs?: Quantity
+  metadataElevationAscended?: Quantity
+  metadataElevationDescended?: Quantity
+  metadataIndoorWorkout?: boolean
+  metadataAverageSpeed?: Quantity
+  metadataMaximumSpeed?: Quantity
+}
+```
+
+<ResponseField name="workoutActivityType" type="WorkoutActivityType" required>
+  The type of workout activity. See [WorkoutActivityType](#workoutactivitytype).
+</ResponseField>
+
+<ResponseField name="duration" type="Quantity" required>
+  The total duration of the workout.
+</ResponseField>
+
+<ResponseField name="totalEnergyBurned" type="Quantity" optional>
+  Total energy burned during the workout (typically in kilocalories).
+</ResponseField>
+
+<ResponseField name="totalDistance" type="Quantity" optional>
+  Total distance covered during the workout.
+</ResponseField>
+
+<ResponseField name="events" type="WorkoutEvent[]" optional>
+  Array of events that occurred during the workout (e.g., pause, resume, lap markers).
+</ResponseField>
+
+### WorkoutActivityType
+
+Enum representing types of physical activities:
+
+```typescript
+enum WorkoutActivityType {
+  running = 37,
+  walking = 52,
+  cycling = 13,
+  swimming = 46,
+  yoga = 57,
+  functionalStrengthTraining = 20,
+  highIntensityIntervalTraining = 63,
+  // ... and many more
+}
+```
+
+Common activity types include:
+- `running` - Running workouts
+- `walking` - Walking workouts
+- `cycling` - Cycling workouts
+- `swimming` - Swimming workouts
+- `yoga` - Yoga sessions
+- `functionalStrengthTraining` - Free weights and bodyweight exercises
+- `highIntensityIntervalTraining` - HIIT workouts
+
+### WorkoutEvent
+
+```typescript
+interface WorkoutEvent {
+  type: WorkoutEventType
+  startDate: Date
+  endDate: Date
+}
+
+enum WorkoutEventType {
+  pause = 1,
+  resume = 2,
+  lap = 3,
+  marker = 4,
+  motionPaused = 5,
+  motionResumed = 6,
+  segment = 7,
+  pauseOrResumeRequest = 8,
+}
+```
+
+### Example
+
+```typescript
+const runSample: WorkoutSample = {
+  uuid: 'abc-123',
+  workoutActivityType: WorkoutActivityType.running,
+  duration: { quantity: 1800, unit: 's' }, // 30 minutes
+  totalDistance: { quantity: 5000, unit: 'm' }, // 5 km
+  totalEnergyBurned: { quantity: 300, unit: 'kcal' },
+  startDate: new Date('2024-03-01T06:00:00Z'),
+  endDate: new Date('2024-03-01T06:30:00Z'),
+  events: [
+    {
+      type: WorkoutEventType.lap,
+      startDate: new Date('2024-03-01T06:10:00Z'),
+      endDate: new Date('2024-03-01T06:10:00Z')
+    }
+  ],
+  // ... other BaseSample fields
+}
+```
+
+## CorrelationSample
+
+Represents a correlation between multiple related samples.
+
+```typescript
+interface CorrelationSample extends BaseSample {
+  correlationType: CorrelationTypeIdentifier
+  objects: readonly (CategorySample | QuantitySample)[]
+  metadataFoodType?: string
+}
+```
+
+<ResponseField name="correlationType" type="CorrelationTypeIdentifier" required>
+  The type of correlation. Common values:
+  - `'HKCorrelationTypeIdentifierBloodPressure'` - Blood pressure (systolic/diastolic)
+  - `'HKCorrelationTypeIdentifierFood'` - Food intake with nutritional data
+</ResponseField>
+
+<ResponseField name="objects" type="(CategorySample | QuantitySample)[]" required>
+  Array of related samples that make up this correlation.
+</ResponseField>
+
+<ResponseField name="metadataFoodType" type="string" optional>
+  For food correlations, the type of food consumed.
+</ResponseField>
+
+### Example: Blood Pressure
+
+```typescript
+const bloodPressure: CorrelationSample = {
+  uuid: 'bp-12345',
+  correlationType: 'HKCorrelationTypeIdentifierBloodPressure',
+  objects: [
+    {
+      // Systolic pressure
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureSystolic',
+      quantity: 120,
+      unit: 'mmHg',
+      // ... other fields
+    },
+    {
+      // Diastolic pressure
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureDiastolic',
+      quantity: 80,
+      unit: 'mmHg',
+      // ... other fields
+    }
+  ],
+  startDate: new Date('2024-03-01T08:00:00Z'),
+  endDate: new Date('2024-03-01T08:00:00Z'),
+  // ... other BaseSample fields
+}
+```
+
+## ElectrocardiogramSample
+
+Represents an ECG recording sample.
+
+```typescript
+interface ElectrocardiogramSample extends BaseSample {
+  classification: ElectrocardiogramClassification
+  symptomsStatus: ElectrocardiogramSymptomsStatus
+  averageHeartRateBpm?: number
+  samplingFrequencyHz?: number
+  numberOfVoltageMeasurements: number
+  voltages?: readonly ElectrocardiogramVoltage[]
+}
+```
+
+<ResponseField name="classification" type="ElectrocardiogramClassification" required>
+  The ECG classification result:
+  - `'notSet'` - No classification
+  - `'sinusRhythm'` - Normal sinus rhythm
+  - `'atrialFibrillation'` - AFib detected
+  - `'inconclusiveLowHeartRate'` - Inconclusive due to low heart rate
+  - `'inconclusiveHighHeartRate'` - Inconclusive due to high heart rate
+  - `'inconclusivePoorReading'` - Inconclusive due to poor signal quality
+  - `'inconclusiveOther'` - Inconclusive for other reasons
+</ResponseField>
+
+<ResponseField name="symptomsStatus" type="ElectrocardiogramSymptomsStatus" required>
+  Whether symptoms were present:
+  - `'notSet'` - Not specified
+  - `'none'` - No symptoms
+  - `'present'` - Symptoms present
+</ResponseField>
+
+<ResponseField name="averageHeartRateBpm" type="number" optional>
+  Average heart rate in beats per minute.
+</ResponseField>
+
+<ResponseField name="voltages" type="ElectrocardiogramVoltage[]" optional>
+  Array of voltage measurements. Only included if requested in query options.
+</ResponseField>
+
+### Example
+
+```typescript
+const ecgSample: ElectrocardiogramSample = {
+  uuid: 'ecg-456',
+  classification: 'sinusRhythm',
+  symptomsStatus: 'none',
+  averageHeartRateBpm: 68,
+  samplingFrequencyHz: 512,
+  numberOfVoltageMeasurements: 15360,
+  startDate: new Date('2024-03-01T12:00:00Z'),
+  endDate: new Date('2024-03-01T12:00:30Z'),
+  // ... other BaseSample fields
+}
+```
+
+## DeletedSample
+
+Represents a deleted sample in anchor-based queries.
+
+```typescript
+interface DeletedSample {
+  uuid: string
+  metadata?: AnyMap
+}
+```
+
+<ResponseField name="uuid" type="string" required>
+  The UUID of the deleted sample.
+</ResponseField>
+
+<ResponseField name="metadata" type="AnyMap" optional>
+  Metadata associated with the deleted sample.
+</ResponseField>
+
+## Common Response Types
+
+Most query methods return results with both samples and deletion information:
+
+```typescript
+interface QuantitySamplesWithAnchorResponse {
+  samples: readonly QuantitySample[]
+  deletedSamples: readonly DeletedSample[]
+  newAnchor: string
+}
+
+interface CategorySamplesWithAnchorResponse {
+  samples: readonly CategorySample[]
+  deletedSamples: readonly DeletedSample[]
+  newAnchor: string
+}
+
+interface QueryWorkoutSamplesWithAnchorResponse {
+  workouts: readonly WorkoutProxy[]
+  deletedSamples: readonly DeletedSample[]
+  newAnchor: string
+}
+```

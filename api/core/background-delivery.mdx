@@ -1,0 +1,203 @@
+---
+title: Background delivery
+description: Enable and manage background updates for HealthKit data
+icon: bell
+---
+
+Background delivery allows your app to receive updates when specific HealthKit data changes, even when your app isn't running.
+
+## Enable background delivery
+
+### enableBackgroundDelivery
+
+Enable background delivery for a specific data type.
+
+```typescript
+function enableBackgroundDelivery(
+  typeIdentifier: ObjectTypeIdentifier,
+  updateFrequency: UpdateFrequency
+): Promise<boolean>
+```
+
+<ParamField path="typeIdentifier" type="ObjectTypeIdentifier" required>
+  The HealthKit data type to monitor for changes
+</ParamField>
+
+<ParamField path="updateFrequency" type="UpdateFrequency" required>
+  How frequently to receive updates:
+  - `UpdateFrequency.immediate` - As soon as data changes
+  - `UpdateFrequency.hourly` - Once per hour
+  - `UpdateFrequency.daily` - Once per day
+  - `UpdateFrequency.weekly` - Once per week
+</ParamField>
+
+**Returns:** `Promise<boolean>` - Resolves to `true` if successful
+
+```typescript
+import { enableBackgroundDelivery, UpdateFrequency } from '@kingstinct/react-native-healthkit';
+
+// Enable immediate background updates for heart rate
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierHeartRate',
+  UpdateFrequency.immediate
+);
+
+// Enable hourly background updates for steps
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierStepCount',
+  UpdateFrequency.hourly
+);
+```
+
+<Warning>
+  Background delivery requires the "Background Modes" capability with
+  "Background fetch" enabled in your Xcode project.
+</Warning>
+
+## Disable background delivery
+
+### disableBackgroundDelivery
+
+Disable background delivery for a specific data type.
+
+```typescript
+function disableBackgroundDelivery(
+  typeIdentifier: ObjectTypeIdentifier
+): Promise<boolean>
+```
+
+<ParamField path="typeIdentifier" type="ObjectTypeIdentifier" required>
+  The HealthKit data type to stop monitoring
+</ParamField>
+
+**Returns:** `Promise<boolean>` - Resolves to `true` if successful
+
+```typescript
+import { disableBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+await disableBackgroundDelivery('HKQuantityTypeIdentifierHeartRate');
+```
+
+### disableAllBackgroundDelivery
+
+Disable background delivery for all data types.
+
+```typescript
+function disableAllBackgroundDelivery(): Promise<boolean>
+```
+
+**Returns:** `Promise<boolean>` - Resolves to `true` if successful
+
+```typescript
+import { disableAllBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+await disableAllBackgroundDelivery();
+```
+
+## Complete example
+
+```typescript
+import {
+  requestAuthorization,
+  enableBackgroundDelivery,
+  subscribeToChanges,
+  UpdateFrequency,
+} from '@kingstinct/react-native-healthkit';
+
+// 1. Request authorization
+await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierHeartRate'],
+});
+
+// 2. Enable background delivery
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierHeartRate',
+  UpdateFrequency.immediate
+);
+
+// 3. Subscribe to changes
+const unsubscribe = subscribeToChanges(
+  'HKQuantityTypeIdentifierHeartRate',
+  () => {
+    console.log('Heart rate data changed!');
+    // Fetch new data...
+  }
+);
+
+// Later: Clean up
+unsubscribe();
+await disableBackgroundDelivery('HKQuantityTypeIdentifierHeartRate');
+```
+
+## Best practices
+
+<Tip>
+  Use anchored queries to efficiently sync only new and changed data when your
+  app receives a background update.
+</Tip>
+
+```typescript
+import {
+  subscribeToChanges,
+  queryQuantitySamplesWithAnchor,
+} from '@kingstinct/react-native-healthkit';
+
+let savedAnchor: string | undefined;
+
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', async () => {
+  // Only fetch data that changed since last sync
+  const { newAnchor, samples, deletedSamples } =
+    await queryQuantitySamplesWithAnchor(
+      'HKQuantityTypeIdentifierStepCount',
+      {
+        anchor: savedAnchor,
+        limit: 100,
+      }
+    );
+
+  // Process new and deleted samples
+  console.log(`${samples.length} new, ${deletedSamples.length} deleted`);
+
+  // Save anchor for next sync
+  savedAnchor = newAnchor;
+});
+```
+
+<Note>
+  Background delivery doesn't guarantee immediate delivery. The system may
+  delay or coalesce updates to preserve battery life.
+</Note>
+
+## Setup requirements
+
+### Native setup
+
+Add the background mode capability in Xcode:
+
+1. Open your project in Xcode
+2. Select your target
+3. Go to "Signing & Capabilities"
+4. Click "+ Capability" and add "Background Modes"
+5. Check "Background fetch"
+
+### Expo setup
+
+Add to your `app.json`:
+
+```json
+{
+  "expo": {
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch"]
+      }
+    }
+  }
+}
+```
+
+## Related APIs
+
+- [Subscribe to changes](/guides/subscriptions)
+- [Anchored queries](/guides/anchors)
+- [Background delivery guide](/core-concepts/background-delivery)

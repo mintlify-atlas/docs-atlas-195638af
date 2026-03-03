@@ -1,0 +1,184 @@
+---
+title: "Save Correlation Sample"
+description: "Save correlation samples to HealthKit like blood pressure readings and food entries"
+---
+
+## saveCorrelationSample
+
+Save a correlation sample to HealthKit. Correlations combine multiple related samples (quantities or categories) into a single entity.
+
+### Signature
+
+```typescript
+function saveCorrelationSample(
+  typeIdentifier: CorrelationTypeIdentifier,
+  samples: SampleForSaving[],
+  start: Date,
+  end: Date,
+  metadata?: AnyMap
+): Promise<CorrelationSample | undefined>
+```
+
+### Parameters
+
+<ParamField path="typeIdentifier" type="CorrelationTypeIdentifier" required>
+  The type of correlation to save:
+  - `'HKCorrelationTypeIdentifierBloodPressure'` - Blood pressure reading
+  - `'HKCorrelationTypeIdentifierFood'` - Food/nutrition entry
+</ParamField>
+
+<ParamField path="samples" type="SampleForSaving[]" required>
+  Array of samples to include in the correlation. Can be quantity or category samples.
+  
+  For blood pressure, you need:
+  - Systolic blood pressure (HKQuantityTypeIdentifierBloodPressureSystolic)
+  - Diastolic blood pressure (HKQuantityTypeIdentifierBloodPressureDiastolic)
+  
+  For food, you can include:
+  - Dietary energy (calories)
+  - Protein, carbs, fats
+  - Various vitamins and minerals
+  
+  <Expandable title="QuantitySampleForSaving properties">
+    <ParamField path="quantityType" type="QuantityTypeIdentifier" required>
+      The type of quantity
+    </ParamField>
+    
+    <ParamField path="quantity" type="number" required>
+      The numeric value
+    </ParamField>
+    
+    <ParamField path="unit" type="string" required>
+      The unit for the quantity
+    </ParamField>
+    
+    <ParamField path="startDate" type="Date" required>
+      When the sample started
+    </ParamField>
+    
+    <ParamField path="endDate" type="Date" required>
+      When the sample ended
+    </ParamField>
+    
+    <ParamField path="metadata" type="AnyMap">
+      Optional metadata
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="start" type="Date" required>
+  When the correlation was recorded
+</ParamField>
+
+<ParamField path="end" type="Date" required>
+  End date of the correlation (usually same as start for point-in-time readings)
+</ParamField>
+
+<ParamField path="metadata" type="AnyMap">
+  Optional metadata for the correlation. For food entries, you can include:
+  - `HKMetadataKeyFoodType` (string) - Description of the food
+</ParamField>
+
+### Returns
+
+<ResponseField name="correlation" type="Promise<CorrelationSample | undefined>">
+  The saved correlation sample, or undefined if the save failed
+</ResponseField>
+
+### Example: Blood Pressure
+
+```typescript
+import { saveCorrelationSample } from '@kingstinct/react-native-healthkit'
+
+const now = new Date()
+
+// Save a blood pressure reading
+const bloodPressure = await saveCorrelationSample(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  [
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureSystolic',
+      quantity: 120,
+      unit: 'mmHg',
+      startDate: now,
+      endDate: now,
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureDiastolic',
+      quantity: 80,
+      unit: 'mmHg',
+      startDate: now,
+      endDate: now,
+    },
+  ],
+  now,
+  now
+)
+
+if (bloodPressure) {
+  console.log('Blood pressure saved:', bloodPressure.uuid)
+}
+```
+
+### Example: Food Entry
+
+```typescript
+import { saveCorrelationSample } from '@kingstinct/react-native-healthkit'
+
+const now = new Date()
+
+// Save a food entry with nutritional information
+const food = await saveCorrelationSample(
+  'HKCorrelationTypeIdentifierFood',
+  [
+    {
+      quantityType: 'HKQuantityTypeIdentifierDietaryEnergyConsumed',
+      quantity: 350,
+      unit: 'kcal',
+      startDate: now,
+      endDate: now,
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierDietaryProtein',
+      quantity: 25,
+      unit: 'g',
+      startDate: now,
+      endDate: now,
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierDietaryCarbohydrates',
+      quantity: 45,
+      unit: 'g',
+      startDate: now,
+      endDate: now,
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierDietaryFatTotal',
+      quantity: 12,
+      unit: 'g',
+      startDate: now,
+      endDate: now,
+    },
+  ],
+  now,
+  now,
+  {
+    HKMetadataKeyFoodType: 'Chicken Caesar Salad',
+  }
+)
+
+if (food) {
+  console.log('Food entry saved:', {
+    uuid: food.uuid,
+    foodType: food.metadataFoodType,
+  })
+}
+```
+
+<Warning>
+  You must request write authorization for the correlation type identifier and all quantity types you want to include before calling this function.
+</Warning>
+
+<Tip>
+  For blood pressure readings, both systolic and diastolic values are required. For food entries, at minimum include dietary energy (calories), but adding more nutritional information provides better health tracking.
+</Tip>

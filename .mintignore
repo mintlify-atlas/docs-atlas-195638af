@@ -5,3 +5,7 @@
 # Draft content
 drafts/
 *.draft.mdx
+
+# Atlas metadata
+.atlas-analysis.json
+AGENTS.md

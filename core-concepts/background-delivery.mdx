@@ -1,0 +1,364 @@
+---
+title: Background delivery
+description: Learn how to receive background notifications when health data changes
+---
+
+Background delivery allows your app to receive notifications when health data changes, even when your app isn't running. This enables your app to stay up-to-date with the latest health information without requiring users to open your app.
+
+## How background delivery works
+
+When you enable background delivery for a data type, HealthKit monitors that data and notifies your app when new samples are added or existing samples are deleted. Your app is launched in the background to process these changes.
+
+<Note>
+  Background delivery notifications are not real-time. HealthKit batches notifications to conserve battery life, and the system determines when to deliver them based on various factors.
+</Note>
+
+## Update frequencies
+
+You can specify how frequently you want to receive updates:
+
+```typescript
+enum UpdateFrequency {
+  immediate = 1,  // As soon as possible (still not real-time)
+  hourly = 2,     // Once per hour
+  daily = 3,      // Once per day
+  weekly = 4      // Once per week
+}
+```
+
+## Enabling background delivery
+
+Before enabling background delivery, you must:
+1. Request authorization for the data type
+2. Enable the HealthKit background capability in your app
+
+### Basic setup
+
+```typescript
+import { 
+  enableBackgroundDelivery,
+  UpdateFrequency 
+} from '@kingstinct/react-native-healthkit';
+
+// First, request authorization
+await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount']
+});
+
+// Then enable background delivery
+const success = await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierStepCount',
+  UpdateFrequency.immediate
+);
+
+if (success) {
+  console.log('Background delivery enabled');
+}
+```
+
+### Subscribing to changes
+
+After enabling background delivery, subscribe to changes:
+
+```typescript
+import { subscribeToChanges } from '@kingstinct/react-native-healthkit';
+
+const subscription = subscribeToChanges(
+  'HKQuantityTypeIdentifierStepCount',
+  (args) => {
+    console.log('Step count data changed!');
+    // Fetch the latest data
+    fetchLatestSteps();
+  }
+);
+
+// When done, unsubscribe
+subscription.remove();
+```
+
+### Using the hook
+
+For React components, use `useSubscribeToChanges`:
+
+```typescript
+import { useSubscribeToChanges, useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+function StepsWidget() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Subscribe to changes
+  useSubscribeToChanges('HKQuantityTypeIdentifierStepCount', () => {
+    setRefreshKey(prev => prev + 1);
+  });
+
+  // This will re-fetch when refreshKey changes
+  const steps = useMostRecentQuantitySample(
+    'HKQuantityTypeIdentifierStepCount',
+    { refreshKey }
+  );
+
+  return <Text>{steps?.quantity} steps</Text>;
+}
+```
+
+## Background capability
+
+To receive background notifications, you must enable the HealthKit background mode in Xcode:
+
+1. Open your project in Xcode
+2. Select your app target
+3. Go to "Signing & Capabilities"
+4. Add "Background Modes" capability
+5. Check "Background fetch"
+
+### Expo configuration
+
+For Expo apps, add this to your `app.json`:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["@kingstinct/react-native-healthkit", {
+        "background": true
+      }]
+    ],
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch"]
+      }
+    }
+  }
+}
+```
+
+## Subscribing to multiple types
+
+You can enable background delivery for multiple data types:
+
+```typescript
+const dataTypes = [
+  'HKQuantityTypeIdentifierStepCount',
+  'HKQuantityTypeIdentifierHeartRate',
+  'HKQuantityTypeIdentifierActiveEnergyBurned'
+] as const;
+
+// Enable background delivery for all types
+for (const type of dataTypes) {
+  await enableBackgroundDelivery(type, UpdateFrequency.immediate);
+}
+
+// Subscribe to all types
+const subscriptions = dataTypes.map(type => 
+  subscribeToChanges(type, () => {
+    console.log(`${type} changed`);
+    // Handle the change
+  })
+);
+
+// Later, unsubscribe from all
+subscriptions.forEach(sub => sub.remove());
+```
+
+## Handling changes efficiently
+
+When a change notification arrives, fetch only the new data using anchors:
+
+```typescript
+import { queryQuantitySamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+let currentAnchor: string | undefined;
+
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', async () => {
+  const result = await queryQuantitySamplesWithAnchor(
+    'HKQuantityTypeIdentifierStepCount',
+    {
+      anchor: currentAnchor,
+      limit: 0 // 0 means no limit
+    }
+  );
+
+  // Process new samples
+  console.log(`New samples: ${result.samples.length}`);
+  console.log(`Deleted samples: ${result.deletedSamples.length}`);
+
+  // Update anchor for next time
+  currentAnchor = result.newAnchor;
+
+  // Store the anchor persistently
+  await AsyncStorage.setItem('stepCountAnchor', currentAnchor);
+});
+```
+
+## Disabling background delivery
+
+When you no longer need background updates:
+
+### Disable for a specific type
+
+```typescript
+import { disableBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+const success = await disableBackgroundDelivery(
+  'HKQuantityTypeIdentifierStepCount'
+);
+```
+
+### Disable all background delivery
+
+```typescript
+import { disableAllBackgroundDelivery } from '@kingstinct/react-native-healthkit';
+
+const success = await disableAllBackgroundDelivery();
+```
+
+## Best practices
+
+### Clean up subscriptions
+
+Always clean up subscriptions when components unmount:
+
+```typescript
+useEffect(() => {
+  const subscription = subscribeToChanges(
+    'HKQuantityTypeIdentifierStepCount',
+    handleChange
+  );
+
+  return () => {
+    subscription.remove();
+  };
+}, []);
+```
+
+### Use appropriate update frequencies
+
+Choose update frequencies based on your use case:
+
+```typescript
+// Real-time monitoring (e.g., workout apps)
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierHeartRate',
+  UpdateFrequency.immediate
+);
+
+// Daily summaries (e.g., step tracking)
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierStepCount',
+  UpdateFrequency.daily
+);
+
+// Weekly reports (e.g., weight tracking)
+await enableBackgroundDelivery(
+  'HKQuantityTypeIdentifierBodyMass',
+  UpdateFrequency.weekly
+);
+```
+
+### Minimize background processing
+
+Keep background work minimal to avoid being throttled:
+
+```typescript
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', async () => {
+  // Good - quick, focused update
+  const latest = await getMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+  await updateLocalCache(latest);
+});
+
+// Avoid - too much processing in background
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', async () => {
+  const allData = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+    from: new Date(0),
+    limit: 10000
+  });
+  await processAllData(allData); // Too slow!
+});
+```
+
+### Handle authorization carefully
+
+Background delivery only works with authorized data types:
+
+```typescript
+// Request authorization first
+const success = await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount']
+});
+
+if (success) {
+  // Then enable background delivery
+  await enableBackgroundDelivery(
+    'HKQuantityTypeIdentifierStepCount',
+    UpdateFrequency.immediate
+  );
+} else {
+  console.log('Authorization denied - background delivery not enabled');
+}
+```
+
+### Store anchors persistently
+
+Persist anchors so you don't miss changes between app launches:
+
+```typescript
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// On app launch, restore anchor
+const storedAnchor = await AsyncStorage.getItem('stepCountAnchor');
+let currentAnchor = storedAnchor || undefined;
+
+subscribeToChanges('HKQuantityTypeIdentifierStepCount', async () => {
+  const result = await queryQuantitySamplesWithAnchor(
+    'HKQuantityTypeIdentifierStepCount',
+    { anchor: currentAnchor, limit: 0 }
+  );
+
+  // Update and persist anchor
+  currentAnchor = result.newAnchor;
+  await AsyncStorage.setItem('stepCountAnchor', currentAnchor);
+});
+```
+
+## Limitations
+
+<Warning>
+  Background delivery has several important limitations:
+</Warning>
+
+- **Not real-time** - Notifications are batched and may be delayed by minutes or hours
+- **System discretion** - iOS decides when to deliver notifications based on battery, usage patterns, etc.
+- **App termination** - If the user force-quits your app, background delivery stops until the app is launched again
+- **Power management** - Background activity is throttled when battery is low
+- **Data privacy** - Background delivery only works for data types you're authorized to read
+
+## Testing background delivery
+
+Background delivery can be difficult to test. Here are some tips:
+
+1. **Use immediate frequency** during development:
+   ```typescript
+   await enableBackgroundDelivery(type, UpdateFrequency.immediate);
+   ```
+
+2. **Add logging** to verify notifications:
+   ```typescript
+   subscribeToChanges(type, () => {
+     console.log('[Background] Data changed:', new Date().toISOString());
+   });
+   ```
+
+3. **Manually add data** in the Health app to trigger notifications
+
+4. **Check Xcode console** for background launch messages
+
+5. **Be patient** - it may take several minutes for the first notification
+
+## Related APIs
+
+- `enableBackgroundDelivery()` - Enable background delivery for a type
+- `disableBackgroundDelivery()` - Disable background delivery for a type
+- `disableAllBackgroundDelivery()` - Disable all background delivery
+- `subscribeToChanges()` - Subscribe to data changes
+- `useSubscribeToChanges()` - Hook for subscribing to changes
+- `queryQuantitySamplesWithAnchor()` - Query new data efficiently

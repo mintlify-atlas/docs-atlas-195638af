@@ -1,0 +1,436 @@
+---
+title: Units
+description: Learn how to work with units, unit conversion, and preferred units in HealthKit
+---
+
+HealthKit uses strongly-typed units to ensure health data is interpreted correctly. Units in React Native HealthKit are represented as strings and follow Apple's HKUnit conventions.
+
+## Unit types
+
+HealthKit supports a wide variety of unit types for different measurements:
+
+### Length units
+
+```typescript
+type LengthUnit = 
+  | 'm'   // meters
+  | 'cm'  // centimeters  
+  | 'mm'  // millimeters
+  | 'km'  // kilometers
+  | 'ft'  // feet
+  | 'in'  // inches
+  | 'yd'  // yards
+  | 'mi'; // miles
+```
+
+### Mass units
+
+```typescript
+type MassUnit = 
+  | 'g'   // grams
+  | 'kg'  // kilograms
+  | 'mg'  // milligrams
+  | 'oz'  // ounces
+  | 'lb'  // pounds
+  | 'st'; // stones
+```
+
+### Energy units
+
+```typescript
+type EnergyUnit = 
+  | 'J'    // joules
+  | 'kJ'   // kilojoules
+  | 'cal'  // calories (small)
+  | 'kcal' // kilocalories
+  | 'Cal'; // Calories (large, same as kcal)
+```
+
+### Volume units
+
+```typescript
+type VolumeUnit = 
+  | 'l'        // liters
+  | 'ml'       // milliliters
+  | 'fl_oz_us' // US fluid ounces
+  | 'fl_oz_imp'// Imperial fluid ounces
+  | 'pt_us'    // US pints
+  | 'pt_imp'   // Imperial pints
+  | 'cup_us'   // US cups
+  | 'cup_imp'; // Imperial cups
+```
+
+### Pressure units
+
+```typescript
+type PressureUnit = 
+  | 'Pa'     // pascals
+  | 'kPa'    // kilopascals
+  | 'mmHg'   // millimeters of mercury
+  | 'inHg'   // inches of mercury
+  | 'cmAq'   // centimeters of water
+  | 'atm'    // atmospheres
+  | 'dBASPL'; // decibels SPL
+```
+
+### Time units
+
+```typescript
+type TimeUnit = 
+  | 's'   // seconds
+  | 'min' // minutes
+  | 'hr'  // hours
+  | 'd'   // days
+  | 'ms'; // milliseconds
+```
+
+### Temperature units
+
+```typescript
+type TemperatureUnit = 
+  | 'degC' // Celsius
+  | 'degF' // Fahrenheit
+  | 'K';   // Kelvin
+```
+
+### Other common units
+
+```typescript
+// Percentages
+'%'
+
+// Counts
+'count'
+
+// Count per time (e.g., heart rate)
+'count/min'
+
+// Speed (any length/time combination)
+'km/hr'
+'mi/hr'
+'m/s'
+
+// International Units (for vitamins, medications)
+'IU'
+
+// Blood glucose
+'mg/dL'
+'mmol<180.15588000005408>/l'
+
+// Audio levels
+'dBHL'  // Decibels hearing level
+'dBASPL' // Decibels SPL
+
+// Apple-specific
+'appleEffortScore'
+```
+
+## Metric prefixes
+
+You can apply SI prefixes to base units:
+
+```typescript
+type MetricPrefix = 
+  | ''   // no prefix (base unit)
+  | 'p'  // pico  (10^-12)
+  | 'n'  // nano  (10^-9)
+  | 'mc' // micro (10^-6)
+  | 'm'  // milli (10^-3)
+  | 'c'  // centi (10^-2)
+  | 'd'  // deci  (10^-1)
+  | 'da' // deka  (10^1)
+  | 'h'  // hecto (10^2)
+  | 'k'  // kilo  (10^3)
+  | 'M'  // mega  (10^6)
+  | 'G'  // giga  (10^9)
+  | 'T'  // tera  (10^12)
+  | 'f'; // femto (10^-15)
+
+// Examples:
+'kg'  // kilograms
+'cm'  // centimeters
+'ml'  // milliliters
+'kPa' // kilopascals
+```
+
+## Preferred units
+
+HealthKit automatically determines the user's preferred unit for each quantity type based on their locale and Health app settings.
+
+### Getting preferred units
+
+Always use the user's preferred unit when displaying data:
+
+```typescript
+import { getPreferredUnits } from '@kingstinct/react-native-healthkit';
+
+const units = await getPreferredUnits([
+  'HKQuantityTypeIdentifierHeight',
+  'HKQuantityTypeIdentifierBodyMass',
+  'HKQuantityTypeIdentifierStepCount'
+]);
+
+// Returns:
+// [
+//   { typeIdentifier: 'HKQuantityTypeIdentifierHeight', unit: 'cm' },
+//   { typeIdentifier: 'HKQuantityTypeIdentifierBodyMass', unit: 'kg' },
+//   { typeIdentifier: 'HKQuantityTypeIdentifierStepCount', unit: 'count' }
+// ]
+```
+
+For a single type:
+
+```typescript
+import { getPreferredUnit } from '@kingstinct/react-native-healthkit';
+
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierHeight');
+console.log(unit); // 'cm' or 'ft' depending on user's locale
+```
+
+### Querying with preferred units
+
+When querying quantity samples, HealthKit returns data in the user's preferred unit by default:
+
+```typescript
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeight');
+
+console.log(samples[0].quantity); // 175
+console.log(samples[0].unit);     // 'cm' (or 'ft' for US users)
+```
+
+### Specifying a unit
+
+You can override the preferred unit when querying:
+
+```typescript
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeight', {
+  unit: 'm' // Get results in meters regardless of preference
+});
+
+console.log(samples[0].quantity); // 1.75
+console.log(samples[0].unit);     // 'm'
+```
+
+## Saving data with units
+
+When saving data, you must specify the unit:
+
+```typescript
+import { saveQuantitySample } from '@kingstinct/react-native-healthkit';
+
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBodyMass',
+  'kg',  // unit
+  70.5,  // quantity
+  {
+    start: new Date(),
+    end: new Date()
+  }
+);
+```
+
+### Different units for the same type
+
+You can save data in any compatible unit - HealthKit handles the conversion:
+
+```typescript
+// Save in pounds
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBodyMass',
+  'lb',
+  155,
+  { start: new Date(), end: new Date() }
+);
+
+// Save in kilograms - both work!
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBodyMass',
+  'kg',
+  70.3,
+  { start: new Date(), end: new Date() }
+);
+
+// When queried, data will be in user's preferred unit
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyMass');
+// Could be either 'kg' or 'lb' depending on user preferences
+```
+
+## Unit compatibility
+
+Not all units work with all quantity types. Check compatibility before saving:
+
+```typescript
+import { isQuantityCompatibleWithUnit } from '@kingstinct/react-native-healthkit';
+
+const compatible = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierBodyMass',
+  'kg'
+);
+console.log(compatible); // true
+
+const invalid = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierBodyMass',
+  'mi' // miles - not compatible with mass!
+);
+console.log(invalid); // false
+```
+
+## Compound units
+
+Some quantity types use compound units:
+
+### Speed (length per time)
+
+```typescript
+// Running speed
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierRunningSpeed',
+  'km/hr',  // kilometers per hour
+  10.5,
+  { start: new Date(), end: new Date() }
+);
+
+// Or in different units
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierRunningSpeed',
+  'mi/hr',  // miles per hour
+  6.5,
+  { start: new Date(), end: new Date() }
+);
+```
+
+### Count per time
+
+```typescript
+// Heart rate
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierHeartRate',
+  'count/min',  // beats per minute
+  72,
+  { start: new Date(), end: new Date() }
+);
+
+// Respiratory rate
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierRespiratoryRate',
+  'count/min',  // breaths per minute  
+  16,
+  { start: new Date(), end: new Date() }
+);
+```
+
+### Molar concentrations
+
+Blood glucose can use molar units:
+
+```typescript
+// mg/dL (common in US)
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  'mg/dL',
+  100,
+  { start: new Date(), end: new Date() }
+);
+
+// mmol/L (common elsewhere)
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  'mmol<180.15588000005408>/l',
+  5.5,
+  { start: new Date(), end: new Date() }
+);
+```
+
+## Unit conversion
+
+HealthKit automatically handles unit conversions. When you query data, you can specify any compatible unit and HealthKit will convert the values:
+
+```typescript
+// Save in kilometers
+await saveQuantitySample(
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  'km',
+  5,
+  { start: new Date(), end: new Date() }
+);
+
+// Query in miles - HealthKit converts automatically
+const samples = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  { unit: 'mi' }
+);
+
+console.log(samples[0].quantity); // ~3.107
+console.log(samples[0].unit);     // 'mi'
+```
+
+## Best practices
+
+### Always use preferred units for display
+
+```typescript
+// Good - respects user preference
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', { unit });
+console.log(`${samples[0].quantity} ${samples[0].unit}`);
+
+// Bad - assumes kilograms
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', { unit: 'kg' });
+console.log(`${samples[0].quantity} kg`); // Wrong for US users!
+```
+
+### Validate units before saving
+
+```typescript
+const unit = 'kg';
+const isValid = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierBodyMass',
+  unit
+);
+
+if (isValid) {
+  await saveQuantitySample(
+    'HKQuantityTypeIdentifierBodyMass',
+    unit,
+    70,
+    { start: new Date(), end: new Date() }
+  );
+} else {
+  console.error('Invalid unit for this quantity type');
+}
+```
+
+### Cache preferred units
+
+Preferred units rarely change, so cache them to avoid repeated queries:
+
+```typescript
+let cachedUnits: Record<string, string> = {};
+
+async function getUnit(identifier: QuantityTypeIdentifier) {
+  if (!cachedUnits[identifier]) {
+    cachedUnits[identifier] = await getPreferredUnit(identifier);
+  }
+  return cachedUnits[identifier];
+}
+```
+
+### Don't hardcode units in UI
+
+```typescript
+// Bad
+<Text>{weight} kg</Text>
+
+// Good  
+<Text>{weight} {unit}</Text>
+```
+
+## Related APIs
+
+- `getPreferredUnits()` - Get preferred units for multiple types
+- `getPreferredUnit()` - Get preferred unit for a single type
+- `isQuantityCompatibleWithUnit()` - Check unit compatibility
+- `queryQuantitySamples()` - Query with specific unit
+- `saveQuantitySample()` - Save with specific unit

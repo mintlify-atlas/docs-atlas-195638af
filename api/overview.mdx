@@ -1,0 +1,163 @@
+---
+title: API overview
+description: Overview of the React Native HealthKit API structure and usage patterns
+icon: code
+---
+
+React Native HealthKit provides a comprehensive, type-safe API for accessing Apple HealthKit data in your React Native applications.
+
+## Import patterns
+
+The library exports all functions and types from a single entry point:
+
+```typescript
+import {
+  // Core functions
+  requestAuthorization,
+  isHealthDataAvailable,
+  
+  // Query functions
+  queryQuantitySamples,
+  queryCategorySamples,
+  queryWorkoutSamples,
+  
+  // Save functions
+  saveQuantitySample,
+  saveCategorySample,
+  saveWorkoutSample,
+  
+  // React Hooks
+  useHealthkitAuthorization,
+  useMostRecentQuantitySample,
+  useSubscribeToChanges,
+  
+  // Types
+  QuantityTypeIdentifier,
+  CategoryTypeIdentifier,
+  AuthorizationStatus,
+} from '@kingstinct/react-native-healthkit';
+```
+
+## Module organization
+
+The library is organized into several logical modules:
+
+<CardGroup cols={2}>
+  <Card title="Core" icon="shield-check" href="/api/core/authorization">
+    Authorization, availability, and background delivery
+  </Card>
+  
+  <Card title="Quantity Types" icon="hashtag" href="/api/quantity/query-samples">
+    100+ numerical health metrics (steps, heart rate, etc.)
+  </Card>
+  
+  <Card title="Category Types" icon="tag" href="/api/category/query-samples">
+    63 categorical health data types (sleep, symptoms, etc.)
+  </Card>
+  
+  <Card title="Workouts" icon="dumbbell" href="/api/workouts/query">
+    75+ workout activity types with routes and statistics
+  </Card>
+  
+  <Card title="Correlations" icon="link" href="/api/correlations/query">
+    Related samples (blood pressure, food entries)
+  </Card>
+  
+  <Card title="Characteristics" icon="user" href="/api/characteristics/biological-sex">
+    User characteristics (age, sex, blood type)
+  </Card>
+  
+  <Card title="React Hooks" icon="react" href="/api/hooks/use-healthkit-authorization">
+    Declarative data fetching with React Hooks
+  </Card>
+  
+  <Card title="Types" icon="brackets-curly" href="/api/types/query-options">
+    TypeScript interfaces and type definitions
+  </Card>
+</CardGroup>
+
+## Programming patterns
+
+### Imperative API
+
+All functions return Promises for async operations:
+
+```typescript
+const { samples } = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    from: new Date(2024, 0, 1),
+    to: new Date(),
+  }
+);
+```
+
+### Declarative API (React Hooks)
+
+Hooks automatically manage subscriptions and state:
+
+```typescript
+const mostRecentSteps = useMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierStepCount'
+);
+```
+
+## Type safety
+
+The library provides comprehensive TypeScript support with:
+
+- **Strict type checking** for all identifiers and parameters
+- **Inference** of return types based on query type
+- **Autocomplete** for all HealthKit constants and enums
+- **Compile-time validation** of units and data types
+
+```typescript
+// TypeScript knows this returns a QuantitySample with specific fields
+const sample = await getMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierHeartRate'
+);
+
+// ✅ Valid - TypeScript allows these fields
+console.log(sample.quantity, sample.unit);
+
+// ❌ Error - TypeScript catches invalid fields
+console.log(sample.invalidField);
+```
+
+## Platform support
+
+<Warning>
+  React Native HealthKit is iOS-only. The library will log warnings and return
+  default values on Android and other platforms.
+</Warning>
+
+The library automatically handles platform detection:
+
+```typescript
+const isAvailable = isHealthDataAvailable();
+
+if (isAvailable) {
+  // Safe to use HealthKit APIs
+}
+```
+
+## Performance
+
+React Native HealthKit is built on [react-native-nitro-modules](https://github.com/mrousavy/nitro) for optimal performance:
+
+- **Zero-copy** data transfer between native and JavaScript
+- **Type-safe** native bindings without serialization overhead
+- **Direct memory access** for large datasets
+- **Lazy evaluation** for complex queries
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authorization" icon="lock" href="/api/core/authorization">
+    Request permissions to access health data
+  </Card>
+  
+  <Card title="Query data" icon="database" href="/guides/reading-data">
+    Learn how to query and read health data
+  </Card>
+</CardGroup>

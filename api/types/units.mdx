@@ -1,0 +1,474 @@
+---
+title: "Units"
+description: "Unit types and valid unit strings for HealthKit quantity measurements"
+---
+
+## Overview
+
+HealthKit uses typed unit strings to represent measurements. Units are based on the metric system with support for imperial units and specialized health measurements. The unit system ensures type safety and proper conversion between different measurement scales.
+
+## Unit Type
+
+The main `Unit` type is a union of all valid unit types:
+
+```typescript
+type Unit =
+  | BloodGlucoseUnit
+  | CountPerTime<TimeUnit>
+  | EnergyUnit
+  | FrequencyUnit
+  | Units
+  | LengthUnit
+  | MassUnit
+  | PressureUnit
+  | SpeedUnit<LengthUnit, TimeUnit>
+  | TemperatureUnit
+  | TimeUnit
+  | VolumeUnit
+```
+
+## Metric Prefixes
+
+SI metric prefixes can be combined with base units:
+
+```typescript
+type MetricPrefix =
+  | ''      // no prefix (base unit)
+  | 'p'     // pico (10⁻¹²)
+  | 'n'     // nano (10⁻⁹)
+  | 'mc'    // micro (10⁻⁶)
+  | 'm'     // milli (10⁻³)
+  | 'c'     // centi (10⁻²)
+  | 'd'     // deci (10⁻¹)
+  | 'da'    // deca (10¹)
+  | 'h'     // hecto (10²)
+  | 'k'     // kilo (10³)
+  | 'M'     // mega (10⁶)
+  | 'G'     // giga (10⁹)
+  | 'T'     // tera (10¹²)
+  | 'f'     // femto (10⁻¹⁵)
+```
+
+## Length Units
+
+```typescript
+type LengthUnit = MeterUnit<MetricPrefix> | UnitOfLength
+
+type UnitOfLength =
+  | 'ft'    // feet
+  | 'm'     // meters
+  | 'in'    // inches
+  | 'yd'    // yards
+  | 'mi'    // miles
+```
+
+### Common Examples
+
+- `'m'` - meters
+- `'km'` - kilometers
+- `'cm'` - centimeters
+- `'mm'` - millimeters
+- `'ft'` - feet
+- `'in'` - inches
+- `'mi'` - miles
+
+### Usage
+
+```typescript
+const heightSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierHeight',
+  quantity: 175,
+  unit: 'cm',
+  // ...
+}
+
+const distanceSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  quantity: 5.2,
+  unit: 'km',
+  // ...
+}
+```
+
+## Mass Units
+
+```typescript
+type MassUnit = GramUnit<MetricPrefix> | UnitOfMass
+
+type UnitOfMass =
+  | 'oz'    // ounces
+  | 'st'    // stones
+  | 'lb'    // pounds
+  | 'g'     // grams
+```
+
+### Common Examples
+
+- `'g'` - grams
+- `'kg'` - kilograms
+- `'mg'` - milligrams
+- `'lb'` - pounds
+- `'oz'` - ounces
+
+### Usage
+
+```typescript
+const weightSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierBodyMass',
+  quantity: 70,
+  unit: 'kg',
+  // ...
+}
+```
+
+## Volume Units
+
+```typescript
+type VolumeUnit = LiterUnit<MetricPrefix> | UnitOfVolume
+
+type UnitOfVolume =
+  | 'cup_imp'    // imperial cups
+  | 'fl_oz_imp'  // imperial fluid ounces
+  | 'pt_imp'     // imperial pints
+  | 'cup_us'     // US cups
+  | 'fl_oz_us'   // US fluid ounces
+  | 'pt_us'      // US pints
+  | 'l'          // liters
+```
+
+### Common Examples
+
+- `'l'` - liters
+- `'ml'` - milliliters
+- `'fl_oz_us'` - US fluid ounces
+- `'cup_us'` - US cups
+
+### Usage
+
+```typescript
+const waterSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierDietaryWater',
+  quantity: 500,
+  unit: 'ml',
+  // ...
+}
+```
+
+## Time Units
+
+```typescript
+type TimeUnit = SecondUnit<MetricPrefix> | UnitOfTime
+
+type UnitOfTime =
+  | 'd'      // days
+  | 'min'    // minutes
+  | 'hr'     // hours
+  | 's'      // seconds
+```
+
+### Common Examples
+
+- `'s'` - seconds
+- `'min'` - minutes
+- `'hr'` - hours
+- `'d'` - days
+- `'ms'` - milliseconds
+
+### Usage
+
+```typescript
+const sleepSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierSleepDuration',
+  quantity: 8,
+  unit: 'hr',
+  // ...
+}
+```
+
+## Energy Units
+
+```typescript
+type EnergyUnit = JouleUnit<MetricPrefix> | UnitOfEnergy
+
+type UnitOfEnergy =
+  | 'kcal'   // kilocalories
+  | 'Cal'    // Calories (same as kcal)
+  | 'cal'    // calories (small calorie)
+  | 'J'      // joules
+```
+
+### Common Examples
+
+- `'kcal'` - kilocalories (food energy)
+- `'Cal'` - Calories (same as kcal)
+- `'kJ'` - kilojoules
+
+### Usage
+
+```typescript
+const energySample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierActiveEnergyBurned',
+  quantity: 250,
+  unit: 'kcal',
+  // ...
+}
+```
+
+## Pressure Units
+
+```typescript
+type PressureUnit = PascalUnit<MetricPrefix> | UnitOfPressure
+
+type UnitOfPressure =
+  | 'atm'      // atmospheres
+  | 'cmAq'     // centimeters of water
+  | 'mmHg'     // millimeters of mercury
+  | 'inHg'     // inches of mercury
+  | 'dBASPL'   // decibels (sound pressure)
+  | 'Pa'       // pascals
+```
+
+### Common Examples
+
+- `'mmHg'` - millimeters of mercury (blood pressure)
+- `'kPa'` - kilopascals
+- `'inHg'` - inches of mercury (barometric pressure)
+
+### Usage
+
+```typescript
+const bloodPressureSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierBloodPressureSystolic',
+  quantity: 120,
+  unit: 'mmHg',
+  // ...
+}
+```
+
+## Temperature Units
+
+```typescript
+type TemperatureUnit =
+  | 'degC'   // degrees Celsius
+  | 'degF'   // degrees Fahrenheit
+  | 'K'      // Kelvin
+```
+
+### Usage
+
+```typescript
+const temperatureSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierBodyTemperature',
+  quantity: 37.5,
+  unit: 'degC',
+  // ...
+}
+```
+
+## Frequency Units
+
+```typescript
+type FrequencyUnit = HertzUnit<MetricPrefix>
+```
+
+### Common Examples
+
+- `'Hz'` - hertz
+- `'kHz'` - kilohertz
+
+## Speed Units
+
+Speed units are composite units combining length and time:
+
+```typescript
+type SpeedUnit<TLength extends LengthUnit, TTime extends TimeUnit> = 
+  `${TLength}/${TTime}`
+```
+
+### Common Examples
+
+- `'m/s'` - meters per second
+- `'km/hr'` - kilometers per hour
+- `'mi/hr'` - miles per hour
+- `'ft/s'` - feet per second
+
+### Usage
+
+```typescript
+const speedSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierWalkingSpeed',
+  quantity: 5.5,
+  unit: 'km/hr',
+  // ...
+}
+```
+
+## Count Per Time
+
+Used for rates and frequencies:
+
+```typescript
+type CountPerTime<TTime extends TimeUnit> = `count/${TTime}`
+```
+
+### Common Examples
+
+- `'count/min'` - counts per minute (heart rate, respiratory rate)
+- `'count/s'` - counts per second
+
+### Usage
+
+```typescript
+const heartRateSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierHeartRate',
+  quantity: 72,
+  unit: 'count/min',
+  // ...
+}
+
+const respiratoryRateSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierRespiratoryRate',
+  quantity: 16,
+  unit: 'count/min',
+  // ...
+}
+```
+
+## Blood Glucose Units
+
+```typescript
+type BloodGlucoseUnit = 
+  | 'mmol<180.15588000005408>/l'  // millimoles per liter
+  | 'mg/dL'                        // milligrams per deciliter
+```
+
+### Usage
+
+```typescript
+const glucoseSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierBloodGlucose',
+  quantity: 95,
+  unit: 'mg/dL',
+  // ...
+}
+```
+
+## Special Units
+
+```typescript
+type Units =
+  | 'dBHL'              // decibels hearing level (audiometry)
+  | 'dBASPL'            // decibels sound pressure level
+  | '%'                 // percent
+  | 'count'             // simple count
+  | 'IU'                // international units
+  | 'appleEffortScore'  // Apple-specific effort score
+```
+
+### Common Examples
+
+- `'%'` - percentage (body fat, oxygen saturation)
+- `'count'` - simple count (steps, flights climbed)
+- `'IU'` - international units (vitamins)
+
+### Usage
+
+```typescript
+const stepsSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierStepCount',
+  quantity: 10000,
+  unit: 'count',
+  // ...
+}
+
+const oxygenSample: QuantitySampleForSaving = {
+  quantityType: 'HKQuantityTypeIdentifierOxygenSaturation',
+  quantity: 98,
+  unit: '%',
+  // ...
+}
+```
+
+## Mole Units (Advanced)
+
+For chemical concentrations:
+
+```typescript
+type MoleUnit<MolarMass extends number> = `mol<${MolarMass}>`
+type MoleUnitWith<MolarMass extends number, Prefix extends MetricPrefix> = 
+  `${Prefix}mol<${MolarMass}>`
+```
+
+### Example
+
+```typescript
+// Blood glucose in mmol/L
+const unit = 'mmol<180.15588000005408>/l'
+```
+
+## Unit Conversion
+
+HealthKit automatically handles unit conversions when querying data. Specify your preferred unit in query options:
+
+```typescript
+const options: QueryOptionsWithSortOrderAndUnit = {
+  limit: 100,
+  unit: 'km',  // Convert distance to kilometers
+  ascending: false
+}
+
+const samples = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  options
+)
+
+// All samples will have distance in kilometers
+samples.samples.forEach(sample => {
+  console.log(`Distance: ${sample.quantity} ${sample.unit}`)
+  // Distance: 5.2 km
+})
+```
+
+## Best Practices
+
+### Use Appropriate Units
+
+Choose units that match the scale of your data:
+
+```typescript
+// Good - appropriate scale
+const height = { quantity: 175, unit: 'cm' }
+const weight = { quantity: 70, unit: 'kg' }
+const distance = { quantity: 5.2, unit: 'km' }
+
+// Avoid - awkward scale
+const height = { quantity: 1750, unit: 'mm' }  // too precise
+const weight = { quantity: 70000, unit: 'g' }  // too large
+```
+
+### Match Regional Conventions
+
+Consider your users' locale:
+
+```typescript
+// US users
+const heightUS = { quantity: 5.9, unit: 'ft' }
+const weightUS = { quantity: 154, unit: 'lb' }
+
+// International users
+const heightIntl = { quantity: 175, unit: 'cm' }
+const weightIntl = { quantity: 70, unit: 'kg' }
+```
+
+### Type Safety
+
+TypeScript will enforce valid unit combinations:
+
+```typescript
+// Valid
+const speed1: SpeedUnit<'m', 's'> = 'm/s'
+const speed2: SpeedUnit<'km', 'hr'> = 'km/hr'
+
+// TypeScript error - invalid combination
+const invalid: SpeedUnit<'kg', 'hr'> = 'kg/hr'  // ❌
+```

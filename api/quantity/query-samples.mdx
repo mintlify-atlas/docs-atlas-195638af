@@ -1,0 +1,267 @@
+---
+title: 'Query Quantity Samples'
+description: 'Query and retrieve quantity samples from HealthKit'
+---
+
+## queryQuantitySamples
+
+Query quantity samples for a specific quantity type identifier.
+
+```typescript
+queryQuantitySamples(
+  identifier: QuantityTypeIdentifier,
+  options: QueryOptionsWithSortOrderAndUnit
+): Promise<readonly QuantitySample[]>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query (e.g., `'HKQuantityTypeIdentifierStepCount'`, `'HKQuantityTypeIdentifierHeartRate'`)
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithSortOrderAndUnit" required>
+  Query options for filtering and controlling the results
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default={20}>
+      Maximum number of samples to return. Use `-1`, `0`, or any non-positive number for no limit
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default={false}>
+      Whether to sort results in ascending order by date
+    </ParamField>
+    
+    <ParamField path="unit" type="string">
+      The unit to use for the returned quantity values. If not specified, uses the user's preferred unit
+    </ParamField>
+    
+    <ParamField path="filter" type="FilterForSamples">
+      Filter criteria for the query
+      
+      <Expandable title="properties">
+        <ParamField path="uuid" type="string">
+          Filter by a specific sample UUID
+        </ParamField>
+        
+        <ParamField path="uuids" type="string[]">
+          Filter by multiple sample UUIDs
+        </ParamField>
+        
+        <ParamField path="date" type="DateFilter">
+          Filter by date range
+          
+          <Expandable title="properties">
+            <ParamField path="startDate" type="Date">
+              Start date for the query range
+            </ParamField>
+            
+            <ParamField path="endDate" type="Date">
+              End date for the query range
+            </ParamField>
+            
+            <ParamField path="strictStartDate" type="boolean">
+              Whether to strictly enforce the start date boundary
+            </ParamField>
+            
+            <ParamField path="strictEndDate" type="boolean">
+              Whether to strictly enforce the end date boundary
+            </ParamField>
+          </Expandable>
+        </ParamField>
+        
+        <ParamField path="metadata" type="PredicateWithMetadataKey">
+          Filter by metadata key and value
+        </ParamField>
+        
+        <ParamField path="sources" type="SourceProxy[]">
+          Filter by specific data sources
+        </ParamField>
+        
+        <ParamField path="workout" type="WorkoutProxy">
+          Filter by samples associated with a specific workout
+        </ParamField>
+        
+        <ParamField path="OR" type="FilterForSamplesBase[]">
+          Combine multiple filters with OR logic
+        </ParamField>
+        
+        <ParamField path="AND" type="FilterForSamplesBase[]">
+          Combine multiple filters with AND logic
+        </ParamField>
+        
+        <ParamField path="NOT" type="FilterForSamplesBase[]">
+          Negate filters
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="samples" type="QuantitySample[]">
+  An array of quantity samples matching the query criteria
+  
+  <Expandable title="QuantitySample properties">
+    <ResponseField name="uuid" type="string">
+      Unique identifier for the sample
+    </ResponseField>
+    
+    <ResponseField name="quantityType" type="QuantityTypeIdentifier">
+      The type of quantity data
+    </ResponseField>
+    
+    <ResponseField name="quantity" type="number">
+      The quantity value
+    </ResponseField>
+    
+    <ResponseField name="unit" type="string">
+      The unit of measurement
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      When the sample started
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      When the sample ended
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="AnyMap">
+      Additional metadata associated with the sample
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit'
+
+// Query last 7 days of step count
+const stepSamples = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 100,
+    ascending: false,
+    filter: {
+      date: {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        endDate: new Date()
+      }
+    }
+  }
+)
+
+console.log(`Found ${stepSamples.length} step samples`)
+stepSamples.forEach(sample => {
+  console.log(`${sample.quantity} ${sample.unit} on ${sample.startDate}`)
+})
+```
+
+---
+
+## queryQuantitySamplesWithAnchor
+
+Query quantity samples using HealthKit anchors for efficient syncing. This method is ideal for keeping your app's data in sync with HealthKit, as it returns only the samples that have changed since the last query.
+
+```typescript
+queryQuantitySamplesWithAnchor(
+  identifier: QuantityTypeIdentifier,
+  options: QueryOptionsWithAnchorAndUnit
+): Promise<QuantitySamplesWithAnchorResponse>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithAnchorAndUnit" required>
+  Query options including anchor information
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default={20}>
+      Maximum number of samples to return per query. Use `0` for no limit
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Base64-encoded anchor string from a previous query. Omit for the first query
+    </ParamField>
+    
+    <ParamField path="unit" type="string">
+      The unit to use for returned quantity values
+    </ParamField>
+    
+    <ParamField path="filter" type="FilterForSamples">
+      Additional filter criteria (see queryQuantitySamples for details)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="response" type="QuantitySamplesWithAnchorResponse">
+  An object containing samples, deleted samples, and the new anchor
+  
+  <Expandable title="properties">
+    <ResponseField name="samples" type="QuantitySample[]">
+      New or updated samples since the last anchor
+    </ResponseField>
+    
+    <ResponseField name="deletedSamples" type="DeletedSample[]">
+      Samples that were deleted since the last anchor
+      
+      <Expandable title="DeletedSample properties">
+        <ResponseField name="uuid" type="string">
+          UUID of the deleted sample
+        </ResponseField>
+        
+        <ResponseField name="metadata" type="AnyMap">
+          Metadata from the deleted sample
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="newAnchor" type="string">
+      Base64-encoded anchor to use for the next query. Store this value to continue syncing
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryQuantitySamplesWithAnchor } from '@kingstinct/react-native-healthkit'
+
+// First sync - no anchor
+const { newAnchor, samples, deletedSamples } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 100
+  }
+)
+
+console.log(`Initial sync: ${samples.length} samples`)
+
+// Store the anchor for next time
+const storedAnchor = newAnchor
+
+// Later, sync only changes
+const nextResult = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 100,
+    anchor: storedAnchor
+  }
+)
+
+console.log(`New samples: ${nextResult.samples.length}`)
+console.log(`Deleted samples: ${nextResult.deletedSamples.length}`)
+```
+
+<Note>
+  Always store the `newAnchor` value after each successful sync. Use this anchor in subsequent queries to retrieve only the changes since the last sync.
+</Note>
+
+<Tip>
+  Setting `limit: 0` will return all available samples, but for large datasets, it's recommended to use a reasonable limit and paginate through results using the anchor.
+</Tip>

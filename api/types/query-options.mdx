@@ -1,0 +1,338 @@
+---
+title: "Query Options"
+description: "Types for querying and filtering HealthKit data"
+---
+
+## Overview
+
+Query options types provide flexible filtering, pagination, and sorting capabilities for HealthKit data queries. These types allow you to specify date ranges, metadata filters, sample limits, and sort orders.
+
+## GenericQueryOptions
+
+Base interface for all query options.
+
+```typescript
+interface GenericQueryOptions {
+  filter?: FilterForSamples
+  limit: number
+}
+```
+
+<ResponseField name="filter" type="FilterForSamples" optional>
+  Filter criteria for samples. See [FilterForSamples](#filterforsamples) for details.
+</ResponseField>
+
+<ResponseField name="limit" type="number" required>
+  Maximum number of samples to return. Specify -1, 0, or any non-positive number to fetch all samples.
+</ResponseField>
+
+## QueryOptionsWithAnchor
+
+Query options with anchor-based pagination support.
+
+```typescript
+interface QueryOptionsWithAnchor extends GenericQueryOptions {
+  anchor?: string
+}
+```
+
+<ResponseField name="anchor" type="string" optional>
+  Pagination anchor from a previous query result. Used to fetch the next batch of results.
+</ResponseField>
+
+## QueryOptionsWithSortOrder
+
+Query options with sort order control.
+
+```typescript
+interface QueryOptionsWithSortOrder extends GenericQueryOptions {
+  ascending?: boolean
+}
+```
+
+<ResponseField name="ascending" type="boolean" optional>
+  Sort order for results. `true` for ascending (oldest first), `false` for descending (newest first).
+</ResponseField>
+
+## QueryOptionsWithSortOrderAndUnit
+
+Query options with sort order and unit specification.
+
+```typescript
+interface QueryOptionsWithSortOrderAndUnit extends QueryOptionsWithSortOrder {
+  unit?: string
+}
+```
+
+<ResponseField name="unit" type="string" optional>
+  Unit for quantity values. See [Units](/api/types/units) for valid unit strings.
+</ResponseField>
+
+## QueryOptionsWithAnchorAndUnit
+
+Query options with anchor-based pagination and unit specification.
+
+```typescript
+interface QueryOptionsWithAnchorAndUnit extends QueryOptionsWithAnchor {
+  unit?: string
+}
+```
+
+<ResponseField name="unit" type="string" optional>
+  Unit for quantity values. See [Units](/api/types/units) for valid unit strings.
+</ResponseField>
+
+## FilterForSamples
+
+Comprehensive filter criteria for HealthKit samples.
+
+```typescript
+interface FilterForSamples extends FilterForSamplesBase {
+  sources?: SourceProxy[]
+  OR?: FilterForSamplesBase[]
+  NOT?: FilterForSamplesBase[]
+  AND?: FilterForSamplesBase[]
+}
+```
+
+<ResponseField name="sources" type="SourceProxy[]" optional>
+  Filter by specific data sources.
+</ResponseField>
+
+<ResponseField name="OR" type="FilterForSamplesBase[]" optional>
+  Array of filter conditions where at least one must match.
+</ResponseField>
+
+<ResponseField name="NOT" type="FilterForSamplesBase[]" optional>
+  Array of filter conditions that must not match.
+</ResponseField>
+
+<ResponseField name="AND" type="FilterForSamplesBase[]" optional>
+  Array of filter conditions that all must match.
+</ResponseField>
+
+## FilterForSamplesBase
+
+Base filter criteria for samples.
+
+```typescript
+interface FilterForSamplesBase {
+  uuid?: string
+  uuids?: string[]
+  metadata?: PredicateWithMetadataKey
+  date?: DateFilter
+  workout?: WorkoutProxy
+  sources?: SourceProxy[]
+}
+```
+
+<ResponseField name="uuid" type="string" optional>
+  Filter by a specific sample UUID.
+</ResponseField>
+
+<ResponseField name="uuids" type="string[]" optional>
+  Filter by multiple sample UUIDs.
+</ResponseField>
+
+<ResponseField name="metadata" type="PredicateWithMetadataKey" optional>
+  Filter by metadata key-value pairs. See [PredicateWithMetadataKey](#predicatewithmetadatakey).
+</ResponseField>
+
+<ResponseField name="date" type="DateFilter" optional>
+  Filter by date range. See [DateFilter](#datefilter).
+</ResponseField>
+
+<ResponseField name="workout" type="WorkoutProxy" optional>
+  Filter samples associated with a specific workout.
+</ResponseField>
+
+<ResponseField name="sources" type="SourceProxy[]" optional>
+  Filter by data sources.
+</ResponseField>
+
+## DateFilter
+
+Filter samples by date range.
+
+```typescript
+interface DateFilter {
+  startDate?: Date
+  endDate?: Date
+  strictEndDate?: boolean
+  strictStartDate?: boolean
+}
+```
+
+<ResponseField name="startDate" type="Date" optional>
+  Start of the date range (inclusive by default).
+</ResponseField>
+
+<ResponseField name="endDate" type="Date" optional>
+  End of the date range (inclusive by default).
+</ResponseField>
+
+<ResponseField name="strictEndDate" type="boolean" optional>
+  When `true`, samples must end before the `endDate` (exclusive).
+</ResponseField>
+
+<ResponseField name="strictStartDate" type="boolean" optional>
+  When `true`, samples must start after the `startDate` (exclusive).
+</ResponseField>
+
+## PredicateWithMetadataKey
+
+Filter by metadata key-value pairs with comparison operators.
+
+```typescript
+interface PredicateWithMetadataKey {
+  withMetadataKey: string
+  operatorType?: ComparisonPredicateOperator
+  value?: string | number | Date | boolean
+}
+```
+
+<ResponseField name="withMetadataKey" type="string" required>
+  The metadata key to filter by.
+</ResponseField>
+
+<ResponseField name="operatorType" type="ComparisonPredicateOperator" optional>
+  Comparison operator for the filter. See [ComparisonPredicateOperator](#comparisonpredicateoperator).
+</ResponseField>
+
+<ResponseField name="value" type="string | number | Date | boolean" optional>
+  The value to compare against.
+</ResponseField>
+
+## ComparisonPredicateOperator
+
+Comparison operators for metadata filtering.
+
+```typescript
+enum ComparisonPredicateOperator {
+  lessThan = 0,
+  lessThanOrEqualTo = 1,
+  greaterThan = 2,
+  greaterThanOrEqualTo = 3,
+  equalTo = 4,
+  notEqualTo = 5,
+  matches = 6,
+  like = 7,
+  beginsWith = 8,
+  endsWith = 9,
+  IN = 10,
+  customSelector = 11,
+  contains = 99,
+  between = 100,
+}
+```
+
+### Numeric Comparisons
+
+- `lessThan` - Value is less than the specified value
+- `lessThanOrEqualTo` - Value is less than or equal to the specified value
+- `greaterThan` - Value is greater than the specified value
+- `greaterThanOrEqualTo` - Value is greater than or equal to the specified value
+- `equalTo` - Value equals the specified value
+- `notEqualTo` - Value does not equal the specified value
+
+### String Comparisons
+
+- `matches` - String matches a regular expression pattern
+- `like` - String matches a pattern with wildcards
+- `beginsWith` - String begins with the specified value
+- `endsWith` - String ends with the specified value
+- `contains` - String contains the specified value
+
+### Collection Comparisons
+
+- `IN` - Value is in the specified collection
+- `between` - Value is between two specified values
+
+### Advanced
+
+- `customSelector` - Use a custom selector for comparison
+
+## Example Usage
+
+### Basic Query with Limit
+
+```typescript
+const options: GenericQueryOptions = {
+  limit: 10
+}
+```
+
+### Date Range Filter
+
+```typescript
+const options: QueryOptionsWithSortOrder = {
+  filter: {
+    date: {
+      startDate: new Date('2024-01-01'),
+      endDate: new Date('2024-12-31')
+    }
+  },
+  limit: 100,
+  ascending: false
+}
+```
+
+### Metadata Filter
+
+```typescript
+const options: QueryOptionsWithAnchor = {
+  filter: {
+    metadata: {
+      withMetadataKey: 'HKWasUserEntered',
+      operatorType: ComparisonPredicateOperator.equalTo,
+      value: true
+    }
+  },
+  limit: 50
+}
+```
+
+### Complex Filter with Logic
+
+```typescript
+const options: QueryOptionsWithSortOrder = {
+  filter: {
+    OR: [
+      {
+        date: {
+          startDate: new Date('2024-01-01'),
+          endDate: new Date('2024-01-31')
+        }
+      },
+      {
+        metadata: {
+          withMetadataKey: 'HKWasUserEntered',
+          operatorType: ComparisonPredicateOperator.equalTo,
+          value: true
+        }
+      }
+    ]
+  },
+  limit: -1, // Fetch all
+  ascending: true
+}
+```
+
+### Anchor-based Pagination
+
+```typescript
+// First query
+const firstOptions: QueryOptionsWithAnchor = {
+  limit: 20
+}
+
+const firstResult = await queryHealthKitData(firstOptions)
+
+// Next page
+const nextOptions: QueryOptionsWithAnchor = {
+  limit: 20,
+  anchor: firstResult.newAnchor
+}
+
+const nextResult = await queryHealthKitData(nextOptions)
+```

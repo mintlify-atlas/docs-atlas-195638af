@@ -1,0 +1,331 @@
+---
+title: Workouts
+description: Learn how to work with workout data, routes, and statistics
+---
+
+React Native HealthKit provides comprehensive support for workout data, including creating workouts, querying workout history, accessing GPS routes, and retrieving workout statistics.
+
+## Query workouts
+
+Fetch workout samples with various filters:
+
+```typescript
+import { queryWorkoutSamples, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+// Get recent workouts
+const workouts = await queryWorkoutSamples({
+  limit: 10
+});
+
+// Filter by activity type
+const runs = await queryWorkoutSamples({
+  limit: 20,
+  filter: {
+    workoutActivityType: WorkoutActivityType.running
+  }
+});
+
+// Filter by date range
+const workouts = await queryWorkoutSamples({
+  limit: 100,
+  filter: {
+    date: {
+      startDate: new Date(2024, 0, 1),
+      endDate: new Date(2024, 11, 31)
+    }
+  }
+});
+```
+
+## Get most recent workout
+
+Quickly access the latest workout:
+
+```typescript
+import { getMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+
+const lastWorkout = await getMostRecentWorkout();
+
+if (lastWorkout) {
+  console.log(lastWorkout.workoutActivityType);
+  console.log(lastWorkout.duration);
+  console.log(lastWorkout.totalDistance);
+  console.log(lastWorkout.totalEnergyBurned);
+}
+```
+
+## Workout activity types
+
+HealthKit supports over 75 workout activity types:
+
+```typescript
+import { WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+// Common activity types
+WorkoutActivityType.running // 37
+WorkoutActivityType.cycling // 13
+WorkoutActivityType.swimming // 46
+WorkoutActivityType.walking // 52
+WorkoutActivityType.yoga // 57
+WorkoutActivityType.hiking // 24
+WorkoutActivityType.functionalStrengthTraining // 20
+WorkoutActivityType.highIntensityIntervalTraining // 63
+WorkoutActivityType.other // 3000
+```
+
+## Workout sample data
+
+Workout samples contain comprehensive information:
+
+```typescript
+for (const workout of workouts) {
+  // Basic info
+  console.log(workout.uuid);
+  console.log(workout.startDate);
+  console.log(workout.endDate);
+  console.log(workout.workoutActivityType);
+  
+  // Duration
+  console.log(workout.duration.quantity); // in seconds
+  console.log(workout.duration.unit); // "s"
+  
+  // Distance (if available)
+  if (workout.totalDistance) {
+    console.log(workout.totalDistance.quantity);
+    console.log(workout.totalDistance.unit); // "km", "mi", etc.
+  }
+  
+  // Energy burned (if available)
+  if (workout.totalEnergyBurned) {
+    console.log(workout.totalEnergyBurned.quantity);
+    console.log(workout.totalEnergyBurned.unit); // "kcal"
+  }
+  
+  // Swimming specific (if available)
+  if (workout.totalSwimmingStrokeCount) {
+    console.log(workout.totalSwimmingStrokeCount.quantity);
+  }
+  
+  // Climbing specific (if available)
+  if (workout.totalFlightsClimbed) {
+    console.log(workout.totalFlightsClimbed.quantity);
+  }
+  
+  // Metadata
+  if (workout.metadataIndoorWorkout !== undefined) {
+    console.log('Indoor:', workout.metadataIndoorWorkout);
+  }
+  if (workout.metadataAverageSpeed) {
+    console.log('Avg speed:', workout.metadataAverageSpeed);
+  }
+  if (workout.metadataElevationAscended) {
+    console.log('Elevation gain:', workout.metadataElevationAscended);
+  }
+}
+```
+
+## Workout events
+
+Workouts can contain events like pauses, laps, and segments:
+
+```typescript
+if (workout.events) {
+  for (const event of workout.events) {
+    console.log(event.type); // WorkoutEventType.pause, .resume, .lap, etc.
+    console.log(event.startDate);
+    console.log(event.endDate);
+  }
+}
+```
+
+## Workout routes
+
+Access GPS location data for workouts with routes:
+
+```typescript
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+
+// Get all routes for this workout
+const routes = await workout.getWorkoutRoutes();
+
+for (const route of routes) {
+  console.log('Route has', route.locations.length, 'locations');
+  
+  for (const location of route.locations) {
+    console.log(location.latitude);
+    console.log(location.longitude);
+    console.log(location.altitude); // meters
+    console.log(location.speed); // m/s
+    console.log(location.course); // degrees
+    console.log(location.date);
+    console.log(location.horizontalAccuracy);
+    console.log(location.verticalAccuracy);
+    
+    // Distance from start (if available)
+    if (location.distance) {
+      console.log(location.distance); // meters
+    }
+  }
+}
+```
+
+<Note>
+Not all workouts have routes. Only workouts recorded with GPS tracking (like outdoor runs or cycling) will have route data.
+</Note>
+
+## Workout statistics
+
+Get detailed statistics for any quantity type associated with a workout:
+
+```typescript
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+
+// Get heart rate statistics for this workout
+const heartRateStats = await workout.getStatistic(
+  'HKQuantityTypeIdentifierHeartRate',
+  'count/min'
+);
+
+if (heartRateStats) {
+  console.log('Average HR:', heartRateStats.averageQuantity);
+  console.log('Min HR:', heartRateStats.minimumQuantity);
+  console.log('Max HR:', heartRateStats.maximumQuantity);
+}
+
+// Get all available statistics
+const allStats = await workout.getAllStatistics();
+console.log(allStats);
+// Returns object with keys like 'HKQuantityTypeIdentifierHeartRate'
+```
+
+## Create workouts
+
+Save new workout sessions:
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+const workout = await saveWorkoutSample({
+  workoutActivityType: WorkoutActivityType.running,
+  start: new Date(2024, 0, 1, 7, 0),
+  end: new Date(2024, 0, 1, 8, 0),
+  energyBurned: {
+    quantity: 300,
+    unit: 'kcal'
+  },
+  distance: {
+    quantity: 5,
+    unit: 'km'
+  },
+  metadata: {
+    HKIndoorWorkout: false,
+    HKAverageSpeed: 2.5 // m/s
+  }
+});
+
+console.log('Saved workout:', workout.uuid);
+```
+
+## Add routes to workouts
+
+Save GPS tracking data for a workout:
+
+```typescript
+const workout = await saveWorkoutSample({
+  workoutActivityType: WorkoutActivityType.running,
+  start: new Date(2024, 0, 1, 7, 0),
+  end: new Date(2024, 0, 1, 8, 0),
+  metadata: {}
+});
+
+// Build location array from GPS tracking
+const locations = [
+  {
+    latitude: 37.7749,
+    longitude: -122.4194,
+    altitude: 10,
+    course: 0,
+    speed: 2.5,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    date: new Date(2024, 0, 1, 7, 0)
+  },
+  {
+    latitude: 37.7750,
+    longitude: -122.4195,
+    altitude: 11,
+    course: 45,
+    speed: 2.6,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    date: new Date(2024, 0, 1, 7, 1)
+  },
+  // ... more locations
+];
+
+await workout.saveWorkoutRoute(locations);
+```
+
+## Filter by duration
+
+Query workouts by duration:
+
+```typescript
+import { ComparisonPredicateOperator } from '@kingstinct/react-native-healthkit';
+
+// Find workouts longer than 30 minutes
+const longWorkouts = await queryWorkoutSamples({
+  filter: {
+    duration: {
+      predicateOperator: ComparisonPredicateOperator.greaterThan,
+      durationInSeconds: 30 * 60
+    }
+  }
+});
+```
+
+## Using hooks
+
+Monitor workout data reactively:
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+
+function LastWorkoutDisplay() {
+  const workout = useMostRecentWorkout();
+  
+  if (!workout) return <Text>No workouts yet</Text>;
+  
+  return (
+    <View>
+      <Text>Type: {workout.workoutActivityType}</Text>
+      <Text>Duration: {workout.duration.quantity}s</Text>
+      {workout.totalDistance && (
+        <Text>Distance: {workout.totalDistance.quantity} {workout.totalDistance.unit}</Text>
+      )}
+    </View>
+  );
+}
+```
+
+## Workout plans
+
+Access workout plan information (iOS 17+):
+
+```typescript
+const workouts = await queryWorkoutSamples({ limit: 1 });
+const workout = workouts[0];
+
+const plan = await workout.getWorkoutPlan();
+
+if (plan) {
+  console.log('Plan ID:', plan.id);
+  console.log('Activity type:', plan.activityType);
+}
+```
+
+<Tip>
+The `WorkoutProxy` object returned from `queryWorkoutSamples` and `saveWorkoutSample` is not just data - it's a hybrid object with methods like `getWorkoutRoutes()`, `getStatistic()`, and `saveWorkoutRoute()`. Use these methods to access related workout data.
+</Tip>

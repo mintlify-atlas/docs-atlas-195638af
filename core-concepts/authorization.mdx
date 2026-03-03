@@ -1,0 +1,217 @@
+---
+title: Authorization
+description: Learn how to request and manage HealthKit authorization for reading and writing health data
+---
+
+HealthKit uses a privacy-first authorization model that requires explicit user permission before your app can access health data. Users control which data types your app can read or write, and permissions can be granted or denied individually.
+
+## Permission types
+
+HealthKit has two distinct permission types:
+
+- **Read permissions** (`toRead`) - Allow your app to query health data
+- **Write permissions** (`toShare`) - Allow your app to save health data
+
+These permissions are requested separately because users may want to write data without allowing your app to read existing data, or vice versa.
+
+## Authorization status
+
+HealthKit provides three authorization statuses:
+
+```typescript
+enum AuthorizationStatus {
+  notDetermined = 0,  // User hasn't been asked yet
+  sharingDenied = 1,  // User denied permission
+  sharingAuthorized = 2  // User granted permission
+}
+```
+
+<Note>
+  For privacy reasons, HealthKit doesn't distinguish between "denied" and "not determined" for read permissions. This prevents apps from inferring whether users have specific health data based on authorization status.
+</Note>
+
+## Requesting authorization
+
+You must request authorization before reading or writing any health data, otherwise your app will crash.
+
+### Basic authorization
+
+Use `requestAuthorization()` to request permissions for specific data types:
+
+```typescript
+import { requestAuthorization } from '@kingstinct/react-native-healthkit';
+
+await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierHeartRate'],
+  toShare: ['HKQuantityTypeIdentifierBodyMass']
+});
+```
+
+### Using the authorization hook
+
+The `useHealthkitAuthorization` hook provides a declarative way to manage authorization:
+
+```typescript
+import { useHealthkitAuthorization } from '@kingstinct/react-native-healthkit';
+
+function MyComponent() {
+  const [status, request] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount'],
+    toWrite: ['HKQuantityTypeIdentifierBodyMass']
+  });
+
+  if (status === null) {
+    return <Text>Loading...</Text>;
+  }
+
+  if (status === AuthorizationRequestStatus.shouldRequest) {
+    return <Button onPress={request} title="Grant Permissions" />;
+  }
+
+  return <Text>Authorized!</Text>;
+}
+```
+
+## Checking authorization status
+
+You can check whether you need to request authorization:
+
+```typescript
+import { getRequestStatusForAuthorization, AuthorizationRequestStatus } from '@kingstinct/react-native-healthkit';
+
+const status = await getRequestStatusForAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount'],
+  toShare: ['HKQuantityTypeIdentifierBodyMass']
+});
+
+switch (status) {
+  case AuthorizationRequestStatus.shouldRequest:
+    // Show permission request UI
+    break;
+  case AuthorizationRequestStatus.unnecessary:
+    // Already authorized
+    break;
+  case AuthorizationRequestStatus.unknown:
+    // Status cannot be determined
+    break;
+}
+```
+
+To check authorization for a specific type:
+
+```typescript
+import { authorizationStatusFor, AuthorizationStatus } from '@kingstinct/react-native-healthkit';
+
+const status = authorizationStatusFor('HKQuantityTypeIdentifierStepCount');
+
+if (status === AuthorizationStatus.sharingAuthorized) {
+  // Authorized to access this data type
+}
+```
+
+## Per-object authorization
+
+Some sensitive data types (like clinical records) require per-object authorization:
+
+```typescript
+import { requestPerObjectReadAuthorization } from '@kingstinct/react-native-healthkit';
+
+await requestPerObjectReadAuthorization('HKClinicalTypeIdentifierAllergyRecord');
+```
+
+## Best practices
+
+<Warning>
+  Never request authorization in the same component where you immediately try to fetch data. This creates a race condition where your data hooks may execute before authorization is granted, causing a crash.
+</Warning>
+
+### Request only what you need
+
+Only request access to data types your app actually uses. Requesting unnecessary permissions reduces user trust:
+
+```typescript
+// Good - request specific types you need
+await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount']
+});
+
+// Bad - requesting everything
+await requestAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierBloodGlucose', ...]
+});
+```
+
+### Request permissions early
+
+Request permissions during onboarding or before users need the feature:
+
+```typescript
+function OnboardingScreen() {
+  const [status, request] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount']
+  });
+
+  return (
+    <Button 
+      onPress={request}
+      title="Connect to HealthKit"
+    />
+  );
+}
+```
+
+### Handle authorization state properly
+
+```typescript
+function StepsScreen() {
+  const [authStatus, requestAuth] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount']
+  });
+  
+  // Only fetch data after authorization is confirmed
+  const steps = useMostRecentQuantitySample(
+    'HKQuantityTypeIdentifierStepCount',
+    { enabled: authStatus === AuthorizationRequestStatus.unnecessary }
+  );
+
+  if (authStatus === AuthorizationRequestStatus.shouldRequest) {
+    return <Button onPress={requestAuth} title="Grant Access" />;
+  }
+
+  return <Text>{steps?.quantity} steps</Text>;
+}
+```
+
+## Info.plist configuration
+
+Before requesting authorization, you must declare usage descriptions in your `Info.plist`:
+
+```xml
+<key>NSHealthShareUsageDescription</key>
+<string>We need access to your health data to track your fitness progress</string>
+<key>NSHealthUpdateUsageDescription</key>
+<string>We need to save your workout data to HealthKit</string>
+```
+
+For Expo users, add this to your `app.json`:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["@kingstinct/react-native-healthkit", {
+        "NSHealthShareUsageDescription": "We need access to your health data to track your fitness progress",
+        "NSHealthUpdateUsageDescription": "We need to save your workout data to HealthKit"
+      }]
+    ]
+  }
+}
+```
+
+## Related APIs
+
+- `requestAuthorization()` - Request authorization for data types
+- `useHealthkitAuthorization()` - Hook for managing authorization state
+- `getRequestStatusForAuthorization()` - Check if authorization is needed
+- `authorizationStatusFor()` - Get authorization status for a specific type
+- `requestPerObjectReadAuthorization()` - Request per-object authorization

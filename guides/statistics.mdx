@@ -1,0 +1,341 @@
+---
+title: Statistics
+description: Learn how to query aggregated statistics and health data summaries
+---
+
+React Native HealthKit provides powerful statistics queries to aggregate and analyze health data over time periods. Use statistics to calculate sums, averages, minimums, maximums, and more.
+
+## Query statistics
+
+Use `queryStatisticsForQuantity` to get aggregated data:
+
+```typescript
+import { queryStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date(2024, 0, 2)
+      }
+    }
+  }
+);
+
+if (stats.sumQuantity) {
+  console.log('Total steps:', stats.sumQuantity.quantity);
+  console.log('Unit:', stats.sumQuantity.unit); // "count"
+}
+```
+
+## Statistics options
+
+HealthKit supports multiple aggregation types:
+
+```typescript
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierHeartRate',
+  [
+    'discreteAverage',
+    'discreteMin',
+    'discreteMax',
+    'mostRecent'
+  ],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date(2024, 0, 2)
+      }
+    },
+    unit: 'count/min'
+  }
+);
+
+console.log('Average HR:', stats.averageQuantity);
+console.log('Min HR:', stats.minimumQuantity);
+console.log('Max HR:', stats.maximumQuantity);
+console.log('Most recent:', stats.mostRecentQuantity);
+```
+
+Available options:
+- `cumulativeSum` - Total sum (for cumulative types like steps, distance)
+- `discreteAverage` - Average value (for discrete types like heart rate)
+- `discreteMin` - Minimum value
+- `discreteMax` - Maximum value
+- `duration` - Duration of data collection
+- `mostRecent` - Most recent sample value
+
+<Note>
+Use `cumulativeSum` for additive data like steps or calories burned. Use `discreteAverage`, `discreteMin`, and `discreteMax` for point-in-time measurements like heart rate or blood pressure.
+</Note>
+
+## Statistics collections
+
+Query statistics broken down by time intervals:
+
+```typescript
+import { queryStatisticsCollectionForQuantity } from '@kingstinct/react-native-healthkit';
+
+const collection = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  {
+    year: 2024,
+    month: 1,
+    day: 1
+  },
+  {
+    year: 2024,
+    month: 1,
+    day: 31
+  },
+  {
+    day: 1 // Group by day
+  },
+  { unit: 'count' }
+);
+
+// Collection returns an array of statistics for each interval
+for (const stat of collection) {
+  console.log('Date:', stat.startDate, 'to', stat.endDate);
+  if (stat.sumQuantity) {
+    console.log('Steps:', stat.sumQuantity.quantity);
+  }
+}
+```
+
+## Interval components
+
+Break down statistics by various time intervals:
+
+```typescript
+// Daily intervals
+const daily = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierActiveEnergyBurned',
+  ['cumulativeSum'],
+  start,
+  end,
+  { day: 1 }
+);
+
+// Hourly intervals
+const hourly = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierHeartRate',
+  ['discreteAverage'],
+  start,
+  end,
+  { hour: 1 }
+);
+
+// Weekly intervals
+const weekly = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  ['cumulativeSum'],
+  start,
+  end,
+  { day: 7 }
+);
+
+// Monthly intervals
+const monthly = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierBodyMass',
+  ['discreteAverage'],
+  start,
+  end,
+  { month: 1 }
+);
+```
+
+## Statistics by source
+
+Get statistics separated by data source:
+
+```typescript
+import { queryStatisticsForQuantitySeparateBySource } from '@kingstinct/react-native-healthkit';
+
+const statsBySource = await queryStatisticsForQuantitySeparateBySource(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date(2024, 0, 2)
+      }
+    }
+  }
+);
+
+for (const stat of statsBySource) {
+  console.log('Source:', stat.source.name);
+  console.log('Bundle ID:', stat.source.bundleIdentifier);
+  if (stat.sumQuantity) {
+    console.log('Steps from this source:', stat.sumQuantity.quantity);
+  }
+}
+```
+
+## Statistics collection by source
+
+Combine interval grouping with source separation:
+
+```typescript
+import { queryStatisticsCollectionForQuantitySeparateBySource } from '@kingstinct/react-native-healthkit';
+
+const collectionBySource = await queryStatisticsCollectionForQuantitySeparateBySource(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  { year: 2024, month: 1, day: 1 },
+  { year: 2024, month: 1, day: 7 },
+  { day: 1 }
+);
+
+for (const sourceData of collectionBySource) {
+  console.log('Source:', sourceData.source.name);
+  
+  for (const stat of sourceData.statistics) {
+    console.log('  Date:', stat.startDate);
+    if (stat.sumQuantity) {
+      console.log('  Steps:', stat.sumQuantity.quantity);
+    }
+  }
+}
+```
+
+## Using the statistics hook
+
+React hook for reactive statistics:
+
+```typescript
+import { useStatisticsForQuantity } from '@kingstinct/react-native-healthkit';
+
+function DailySteps() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const stats = useStatisticsForQuantity(
+    'HKQuantityTypeIdentifierStepCount',
+    ['cumulativeSum'],
+    today,
+    new Date()
+  );
+  
+  if (!stats?.sumQuantity) {
+    return <Text>No step data</Text>;
+  }
+  
+  return (
+    <Text>
+      Today's steps: {stats.sumQuantity.quantity}
+    </Text>
+  );
+}
+```
+
+<Tip>
+The `useStatisticsForQuantity` hook automatically subscribes to data changes and refetches statistics when underlying data is updated.
+</Tip>
+
+## Duration statistics
+
+Query duration of data collection:
+
+```typescript
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierAppleExerciseTime',
+  ['cumulativeSum', 'duration'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date(2024, 0, 2)
+      }
+    }
+  }
+);
+
+if (stats.duration) {
+  console.log('Exercise duration:', stats.duration.quantity, stats.duration.unit);
+}
+```
+
+## Most recent sample
+
+Get the most recent value within a time range:
+
+```typescript
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierBodyMass',
+  ['mostRecent'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date()
+      }
+    },
+    unit: 'kg'
+  }
+);
+
+if (stats.mostRecentQuantity) {
+  console.log('Most recent weight:', stats.mostRecentQuantity.quantity, 'kg');
+  
+  if (stats.mostRecentQuantityDateInterval) {
+    console.log('Measured on:', stats.mostRecentQuantityDateInterval.from);
+  }
+}
+```
+
+## Statistics response structure
+
+All statistics queries return this structure:
+
+```typescript
+interface QueryStatisticsResponse {
+  averageQuantity?: Quantity;          // Average value
+  maximumQuantity?: Quantity;          // Maximum value
+  minimumQuantity?: Quantity;          // Minimum value
+  sumQuantity?: Quantity;              // Total sum
+  mostRecentQuantity?: Quantity;       // Most recent value
+  mostRecentQuantityDateInterval?: {   // When most recent was recorded
+    from: Date;
+    to: Date;
+  };
+  duration?: Quantity;                 // Duration of data
+  startDate?: Date;                    // Query start date
+  endDate?: Date;                      // Query end date
+  sources: SourceProxy[];              // Data sources
+}
+```
+
+## Filter statistics
+
+Combine statistics with filters:
+
+```typescript
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1),
+        endDate: new Date(2024, 0, 2)
+      },
+      metadata: {
+        withMetadataKey: 'HKWasUserEntered',
+        value: false  // Only automatically tracked steps
+      }
+    }
+  }
+);
+```
+
+<Note>
+When querying statistics, HealthKit automatically handles data from multiple sources and applies the appropriate aggregation rules based on source priority.
+</Note>

@@ -1,0 +1,253 @@
+---
+title: "Query Correlation Samples"
+description: "Query correlation samples from HealthKit like blood pressure and food"
+---
+
+## Overview
+
+Correlations in HealthKit combine multiple related samples into a single entity. The two main correlation types are:
+
+- **Blood Pressure**: Combines systolic and diastolic blood pressure readings
+- **Food**: Combines nutritional information (calories, protein, carbs, fats, etc.)
+
+## queryCorrelationSamples
+
+Query correlation samples from HealthKit with optional filtering and sorting.
+
+### Signature
+
+```typescript
+function queryCorrelationSamples(
+  typeIdentifier: CorrelationTypeIdentifier,
+  options: QueryOptionsWithSortOrder
+): Promise<readonly CorrelationSample[]>
+```
+
+### Parameters
+
+<ParamField path="typeIdentifier" type="CorrelationTypeIdentifier" required>
+  The type of correlation to query:
+  - `'HKCorrelationTypeIdentifierBloodPressure'` - Blood pressure readings
+  - `'HKCorrelationTypeIdentifierFood'` - Food/nutrition entries
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithSortOrder" required>
+  Query options for filtering and sorting
+  
+  <Expandable title="properties">
+    <ParamField path="filter" type="FilterForSamples">
+      Optional filter criteria
+      
+      <Expandable title="properties">
+        <ParamField path="startDate" type="Date">
+          Filter samples starting after this date
+        </ParamField>
+        
+        <ParamField path="endDate" type="Date">
+          Filter samples ending before this date
+        </ParamField>
+        
+        <ParamField path="sourceRevision" type="SourceRevision">
+          Filter by specific app or device source
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use -1, 0, or any non-positive number to fetch all samples
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by start date. If true, oldest first; if false, newest first
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="correlations" type="Promise<CorrelationSample[]>">
+  Array of correlation samples matching the query criteria
+  
+  <Expandable title="CorrelationSample properties">
+    <ResponseField name="uuid" type="string">
+      Unique identifier for the correlation
+    </ResponseField>
+    
+    <ResponseField name="correlationType" type="CorrelationTypeIdentifier">
+      The type of correlation
+    </ResponseField>
+    
+    <ResponseField name="objects" type="(CategorySample | QuantitySample)[]">
+      Array of related samples (e.g., systolic and diastolic for blood pressure)
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      When the correlation was recorded
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      End date of the correlation
+    </ResponseField>
+    
+    <ResponseField name="metadataFoodType" type="string">
+      Food type description (only for food correlations)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryCorrelationSamples } from '@kingstinct/react-native-healthkit'
+
+// Query blood pressure readings
+const bloodPressureReadings = await queryCorrelationSamples(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  {
+    limit: 10,
+    ascending: false, // newest first
+  }
+)
+
+for (const reading of bloodPressureReadings) {
+  console.log('Blood Pressure:', {
+    date: reading.startDate,
+    uuid: reading.uuid,
+  })
+  
+  // Extract systolic and diastolic values
+  for (const obj of reading.objects) {
+    if ('quantityType' in obj) {
+      console.log(`${obj.quantityType}: ${obj.quantity} ${obj.unit}`)
+    }
+  }
+}
+
+// Query food entries from last week
+const weekAgo = new Date()
+weekAgo.setDate(weekAgo.getDate() - 7)
+
+const foodEntries = await queryCorrelationSamples(
+  'HKCorrelationTypeIdentifierFood',
+  {
+    filter: {
+      startDate: weekAgo,
+    },
+    limit: -1, // all entries
+    ascending: true,
+  }
+)
+
+for (const food of foodEntries) {
+  console.log('Food:', {
+    date: food.startDate,
+    foodType: food.metadataFoodType,
+  })
+  
+  // Extract nutritional values
+  for (const obj of food.objects) {
+    if ('quantityType' in obj) {
+      console.log(`${obj.quantityType}: ${obj.quantity} ${obj.unit}`)
+    }
+  }
+}
+```
+
+---
+
+## queryCorrelationSamplesWithAnchor
+
+Query correlation samples using an anchor to track changes and support pagination. This is useful for syncing data efficiently.
+
+### Signature
+
+```typescript
+function queryCorrelationSamplesWithAnchor(
+  typeIdentifier: CorrelationTypeIdentifier,
+  options: QueryOptionsWithAnchor
+): Promise<QueryCorrelationSamplesWithAnchorResponse>
+```
+
+### Parameters
+
+<ParamField path="typeIdentifier" type="CorrelationTypeIdentifier" required>
+  The type of correlation to query (same as queryCorrelationSamples)
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithAnchor" required>
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="filter" type="FilterForSamples">
+      Optional filter criteria (same as queryCorrelationSamples)
+    </ParamField>
+    
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use -1, 0, or any non-positive number to fetch all samples
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Anchor from previous query to fetch only new/changed data. Omit or pass undefined for initial query
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="response" type="Promise<QueryCorrelationSamplesWithAnchorResponse>">
+  <Expandable title="properties">
+    <ResponseField name="correlations" type="CorrelationSample[]">
+      Array of new or updated correlation samples since the anchor
+    </ResponseField>
+    
+    <ResponseField name="deletedSamples" type="DeletedSample[]">
+      Array of deleted sample UUIDs and deletion dates
+    </ResponseField>
+    
+    <ResponseField name="newAnchor" type="string">
+      New anchor value to use for the next query
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryCorrelationSamplesWithAnchor } from '@kingstinct/react-native-healthkit'
+
+// Initial query
+let anchor: string | undefined
+
+const initialResult = await queryCorrelationSamplesWithAnchor(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  {
+    limit: 100,
+    anchor: undefined, // first query
+  }
+)
+
+console.log(`Initial: ${initialResult.correlations.length} readings`)
+anchor = initialResult.newAnchor
+
+// Subsequent query - only gets changes since last query
+const updateResult = await queryCorrelationSamplesWithAnchor(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  {
+    limit: 100,
+    anchor, // use saved anchor
+  }
+)
+
+console.log(`New readings: ${updateResult.correlations.length}`)
+console.log(`Deleted readings: ${updateResult.deletedSamples.length}`)
+anchor = updateResult.newAnchor // save for next time
+
+// Handle deletions
+for (const deleted of updateResult.deletedSamples) {
+  console.log(`Reading ${deleted.uuid} was deleted on ${deleted.deletedDate}`)
+}
+```
+
+<Note>
+  Anchored queries are ideal for syncing correlation data efficiently. The anchor tracks the state of the HealthKit database, so subsequent queries only return changes since the last query.
+</Note>

@@ -1,0 +1,267 @@
+---
+title: 'Query Category Samples'
+description: 'Query and retrieve category samples from HealthKit'
+icon: 'magnifying-glass'
+---
+
+## queryCategorySamples
+
+Query category samples from HealthKit with flexible filtering and sorting options.
+
+```typescript
+queryCategorySamples<T extends CategoryTypeIdentifier>(
+  identifier: T,
+  options: QueryOptionsWithSortOrder
+): Promise<readonly CategorySampleTyped<T>[]>
+```
+
+### Parameters
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The category type identifier to query. See [Category Type Identifiers](/api/category/identifiers) for all available types.
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithSortOrder" required>
+  Query options for filtering and sorting the results.
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use `-1`, `0`, or any non-positive number to fetch all samples.
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean">
+      Sort order for the results. `true` for ascending (oldest first), `false` for descending (newest first). Defaults to `false`.
+    </ParamField>
+    
+    <ParamField path="filter" type="FilterForSamples">
+      Advanced filtering options.
+      
+      <Expandable title="properties">
+        <ParamField path="uuid" type="string">
+          Filter by a specific sample UUID.
+        </ParamField>
+        
+        <ParamField path="uuids" type="string[]">
+          Filter by multiple sample UUIDs.
+        </ParamField>
+        
+        <ParamField path="date" type="DateFilter">
+          Filter by date range.
+          
+          <Expandable title="properties">
+            <ParamField path="startDate" type="Date">
+              Start date for the query range.
+            </ParamField>
+            
+            <ParamField path="endDate" type="Date">
+              End date for the query range.
+            </ParamField>
+            
+            <ParamField path="strictStartDate" type="boolean">
+              Whether to strictly enforce the start date (exclusive vs inclusive).
+            </ParamField>
+            
+            <ParamField path="strictEndDate" type="boolean">
+              Whether to strictly enforce the end date (exclusive vs inclusive).
+            </ParamField>
+          </Expandable>
+        </ParamField>
+        
+        <ParamField path="metadata" type="PredicateWithMetadataKey">
+          Filter by metadata key-value pairs.
+        </ParamField>
+        
+        <ParamField path="sources" type="SourceProxy[]">
+          Filter by specific data sources.
+        </ParamField>
+        
+        <ParamField path="OR" type="FilterForSamplesBase[]">
+          Combine multiple filters with OR logic.
+        </ParamField>
+        
+        <ParamField path="AND" type="FilterForSamplesBase[]">
+          Combine multiple filters with AND logic.
+        </ParamField>
+        
+        <ParamField path="NOT" type="FilterForSamplesBase[]">
+          Negate filters.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="samples" type="readonly CategorySampleTyped<T>[]">
+  An array of category samples matching the query criteria.
+  
+  <Expandable title="CategorySampleTyped properties">
+    <ResponseField name="uuid" type="string">
+      Unique identifier for the sample.
+    </ResponseField>
+    
+    <ResponseField name="categoryType" type="CategoryTypeIdentifier">
+      The category type identifier.
+    </ResponseField>
+    
+    <ResponseField name="value" type="CategoryValueForIdentifier<T>">
+      The category value, typed according to the identifier.
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      Start date of the category sample.
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      End date of the category sample.
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="MetadataForCategoryIdentifier<T>">
+      Metadata associated with the sample.
+    </ResponseField>
+    
+    <ResponseField name="sourceRevision" type="SourceRevision">
+      Information about the source that created this sample.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import HealthKit, { CategoryValueSleepAnalysis } from 'react-native-healthkit';
+
+// Query sleep analysis samples for the last 7 days
+const samples = await HealthKit.queryCategorySamples(
+  'HKCategoryTypeIdentifierSleepAnalysis',
+  {
+    limit: 100,
+    ascending: false,
+    filter: {
+      date: {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        endDate: new Date(),
+      },
+    },
+  }
+);
+
+samples.forEach((sample) => {
+  console.log(`Sleep stage: ${sample.value}`);
+  console.log(`Duration: ${sample.endDate.getTime() - sample.startDate.getTime()}ms`);
+});
+```
+
+---
+
+## queryCategorySamplesWithAnchor
+
+Query category samples with anchor-based pagination for efficient data synchronization.
+
+```typescript
+queryCategorySamplesWithAnchor<T extends CategoryTypeIdentifier>(
+  identifier: T,
+  options: QueryOptionsWithAnchor
+): Promise<CategorySamplesWithAnchorResponseTyped<T>>
+```
+
+### Parameters
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The category type identifier to query. See [Category Type Identifiers](/api/category/identifiers) for all available types.
+</ParamField>
+
+<ParamField path="options" type="QueryOptionsWithAnchor" required>
+  Query options including anchor for pagination.
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" required>
+      Maximum number of samples to return. Use `-1`, `0`, or any non-positive number to fetch all samples.
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      The anchor from a previous query. Use this to fetch only new or updated samples since the last query. Omit this parameter on the first query.
+    </ParamField>
+    
+    <ParamField path="filter" type="FilterForSamples">
+      Advanced filtering options (same as `queryCategorySamples`).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="response" type="CategorySamplesWithAnchorResponseTyped<T>">
+  Response object containing samples, deleted samples, and a new anchor.
+  
+  <Expandable title="properties">
+    <ResponseField name="samples" type="readonly CategorySampleTyped<T>[]">
+      New or updated category samples since the last anchor.
+    </ResponseField>
+    
+    <ResponseField name="deletedSamples" type="readonly DeletedSample[]">
+      Samples that were deleted since the last anchor.
+      
+      <Expandable title="DeletedSample properties">
+        <ResponseField name="uuid" type="string">
+          UUID of the deleted sample.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="newAnchor" type="string">
+      New anchor to use for the next query. Store this value to track incremental changes.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import HealthKit from 'react-native-healthkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// First query - no anchor
+let response = await HealthKit.queryCategorySamplesWithAnchor(
+  'HKCategoryTypeIdentifierMindfulSession',
+  {
+    limit: -1, // Get all samples
+  }
+);
+
+console.log(`Fetched ${response.samples.length} mindful sessions`);
+
+// Save the anchor for next time
+await AsyncStorage.setItem('mindfulSessionAnchor', response.newAnchor);
+
+// Later query - use stored anchor to get only new data
+const savedAnchor = await AsyncStorage.getItem('mindfulSessionAnchor');
+
+if (savedAnchor) {
+  response = await HealthKit.queryCategorySamplesWithAnchor(
+    'HKCategoryTypeIdentifierMindfulSession',
+    {
+      limit: -1,
+      anchor: savedAnchor,
+    }
+  );
+  
+  console.log(`New samples: ${response.samples.length}`);
+  console.log(`Deleted samples: ${response.deletedSamples.length}`);
+  
+  // Update the anchor
+  await AsyncStorage.setItem('mindfulSessionAnchor', response.newAnchor);
+}
+```
+
+<Note>
+  The anchor-based query is particularly useful for:
+  - Syncing data efficiently with your backend
+  - Implementing real-time updates in your app
+  - Reducing data transfer by fetching only changes
+</Note>
+
+<Tip>
+  Always store the `newAnchor` value and use it in subsequent queries to avoid fetching duplicate data.
+</Tip>

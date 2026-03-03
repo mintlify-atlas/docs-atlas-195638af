@@ -1,0 +1,382 @@
+---
+title: 'Quantity Statistics'
+description: 'Query aggregated statistics for quantity samples'
+---
+
+## queryStatisticsForQuantity
+
+Query aggregated statistics for a quantity type over a specified time period.
+
+```typescript
+queryStatisticsForQuantity(
+  identifier: QuantityTypeIdentifier,
+  statistics: readonly StatisticsOptions[],
+  options?: StatisticsQueryOptions
+): Promise<QueryStatisticsResponse>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query statistics for
+</ParamField>
+
+<ParamField path="statistics" type="StatisticsOptions[]" required>
+  Array of statistics to compute. Available options:
+  - `'cumulativeSum'` - Total sum of all values
+  - `'discreteAverage'` - Average of discrete values
+  - `'discreteMax'` - Maximum value
+  - `'discreteMin'` - Minimum value
+  - `'duration'` - Total duration
+  - `'mostRecent'` - Most recent sample
+</ParamField>
+
+<ParamField path="options" type="StatisticsQueryOptions">
+  Optional query configuration
+  
+  <Expandable title="properties">
+    <ParamField path="unit" type="string">
+      Unit for returned values. Defaults to user's preferred unit
+    </ParamField>
+    
+    <ParamField path="filter" type="FilterForSamples">
+      Filter criteria including date range, sources, metadata, etc.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="statistics" type="QueryStatisticsResponse">
+  Statistics results for the query
+  
+  <Expandable title="properties">
+    <ResponseField name="averageQuantity" type="Quantity">
+      Average quantity (if `'discreteAverage'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="maximumQuantity" type="Quantity">
+      Maximum quantity (if `'discreteMax'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="minimumQuantity" type="Quantity">
+      Minimum quantity (if `'discreteMin'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="sumQuantity" type="Quantity">
+      Sum of all quantities (if `'cumulativeSum'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="mostRecentQuantity" type="Quantity">
+      Most recent quantity value (if `'mostRecent'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="mostRecentQuantityDateInterval" type="QuantityDateInterval">
+      Date range of the most recent quantity
+    </ResponseField>
+    
+    <ResponseField name="duration" type="Quantity">
+      Total duration (if `'duration'` was requested)
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      Start date of the statistics period
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      End date of the statistics period
+    </ResponseField>
+    
+    <ResponseField name="sources" type="SourceProxy[]">
+      Data sources that contributed to these statistics
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryStatisticsForQuantity } from '@kingstinct/react-native-healthkit'
+
+// Get total steps for today
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+
+const stats = await queryStatisticsForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum', 'discreteMax'],
+  {
+    unit: 'count',
+    filter: {
+      date: {
+        startDate: today,
+        endDate: new Date()
+      }
+    }
+  }
+)
+
+console.log(`Total steps today: ${stats.sumQuantity?.quantity}`)
+console.log(`Max steps in one sample: ${stats.maximumQuantity?.quantity}`)
+```
+
+---
+
+## queryStatisticsCollectionForQuantity
+
+Query statistics broken down into intervals (e.g., daily, hourly) over a time period.
+
+```typescript
+queryStatisticsCollectionForQuantity(
+  identifier: QuantityTypeIdentifier,
+  statistics: readonly StatisticsOptions[],
+  anchorDate: Date,
+  intervalComponents: IntervalComponents,
+  options?: StatisticsQueryOptions
+): Promise<readonly QueryStatisticsResponse[]>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query
+</ParamField>
+
+<ParamField path="statistics" type="StatisticsOptions[]" required>
+  Array of statistics to compute for each interval
+</ParamField>
+
+<ParamField path="anchorDate" type="Date" required>
+  The anchor date that defines interval boundaries
+</ParamField>
+
+<ParamField path="intervalComponents" type="IntervalComponents" required>
+  Defines the interval duration
+  
+  <Expandable title="properties">
+    <ParamField path="minute" type="number">
+      Number of minutes per interval
+    </ParamField>
+    
+    <ParamField path="hour" type="number">
+      Number of hours per interval
+    </ParamField>
+    
+    <ParamField path="day" type="number">
+      Number of days per interval
+    </ParamField>
+    
+    <ParamField path="month" type="number">
+      Number of months per interval
+    </ParamField>
+    
+    <ParamField path="year" type="number">
+      Number of years per interval
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="StatisticsQueryOptions">
+  Optional query configuration (unit and filter)
+</ParamField>
+
+### Returns
+
+<ResponseField name="collection" type="QueryStatisticsResponse[]">
+  Array of statistics, one for each interval in the time range
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryStatisticsCollectionForQuantity } from '@kingstinct/react-native-healthkit'
+
+// Get daily step counts for the last week
+const now = new Date()
+const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+const dailyStats = await queryStatisticsCollectionForQuantity(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  weekAgo,
+  { day: 1 }, // 1-day intervals
+  {
+    unit: 'count',
+    filter: {
+      date: {
+        startDate: weekAgo,
+        endDate: now
+      }
+    }
+  }
+)
+
+dailyStats.forEach((stats, index) => {
+  console.log(`Day ${index + 1}: ${stats.sumQuantity?.quantity || 0} steps`)
+})
+```
+
+---
+
+## queryStatisticsForQuantitySeparateBySource
+
+Query statistics with results separated by data source.
+
+```typescript
+queryStatisticsForQuantitySeparateBySource(
+  identifier: QuantityTypeIdentifier,
+  statistics: readonly StatisticsOptions[],
+  options?: StatisticsQueryOptions
+): Promise<QueryStatisticsResponseFromSingleSource[]>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query
+</ParamField>
+
+<ParamField path="statistics" type="StatisticsOptions[]" required>
+  Array of statistics to compute
+</ParamField>
+
+<ParamField path="options" type="StatisticsQueryOptions">
+  Optional query configuration
+</ParamField>
+
+### Returns
+
+<ResponseField name="sourceStatistics" type="QueryStatisticsResponseFromSingleSource[]">
+  Array of statistics, one per data source
+  
+  <Expandable title="properties">
+    <ResponseField name="source" type="SourceProxy">
+      The data source for these statistics
+    </ResponseField>
+    
+    <ResponseField name="averageQuantity" type="Quantity">
+      Average from this source
+    </ResponseField>
+    
+    <ResponseField name="sumQuantity" type="Quantity">
+      Sum from this source
+    </ResponseField>
+    
+    <ResponseField name="...other statistics" type="Quantity">
+      Other requested statistics from this source
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryStatisticsForQuantitySeparateBySource } from '@kingstinct/react-native-healthkit'
+
+// Get step counts by source
+const statsBySource = await queryStatisticsForQuantitySeparateBySource(
+  'HKQuantityTypeIdentifierStepCount',
+  ['cumulativeSum'],
+  {
+    filter: {
+      date: {
+        startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        endDate: new Date()
+      }
+    }
+  }
+)
+
+statsBySource.forEach(stats => {
+  const sourceName = stats.source.name
+  const steps = stats.sumQuantity?.quantity || 0
+  console.log(`${sourceName}: ${steps} steps`)
+})
+```
+
+---
+
+## queryStatisticsCollectionForQuantitySeparateBySource
+
+Query interval-based statistics with results separated by data source.
+
+```typescript
+queryStatisticsCollectionForQuantitySeparateBySource(
+  identifier: QuantityTypeIdentifier,
+  statistics: readonly StatisticsOptions[],
+  anchorDate: Date,
+  intervalComponents: IntervalComponents,
+  options?: StatisticsQueryOptions
+): Promise<readonly QueryStatisticsResponseFromSingleSource[]>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to query
+</ParamField>
+
+<ParamField path="statistics" type="StatisticsOptions[]" required>
+  Array of statistics to compute
+</ParamField>
+
+<ParamField path="anchorDate" type="Date" required>
+  The anchor date for interval boundaries
+</ParamField>
+
+<ParamField path="intervalComponents" type="IntervalComponents" required>
+  The interval duration (see queryStatisticsCollectionForQuantity)
+</ParamField>
+
+<ParamField path="options" type="StatisticsQueryOptions">
+  Optional query configuration
+</ParamField>
+
+### Returns
+
+<ResponseField name="collection" type="QueryStatisticsResponseFromSingleSource[]">
+  Array of statistics per source per interval
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryStatisticsCollectionForQuantitySeparateBySource } from '@kingstinct/react-native-healthkit'
+
+// Get hourly heart rate by source for today
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+
+const hourlyStatsBySource = await queryStatisticsCollectionForQuantitySeparateBySource(
+  'HKQuantityTypeIdentifierHeartRate',
+  ['discreteAverage'],
+  today,
+  { hour: 1 },
+  {
+    unit: 'count/min',
+    filter: {
+      date: {
+        startDate: today,
+        endDate: new Date()
+      }
+    }
+  }
+)
+
+// Group by source
+const bySource = new Map()
+for (const stats of hourlyStatsBySource) {
+  const sourceName = stats.source.name
+  if (!bySource.has(sourceName)) {
+    bySource.set(sourceName, [])
+  }
+  bySource.get(sourceName).push(stats)
+}
+
+bySource.forEach((stats, sourceName) => {
+  console.log(`\n${sourceName}:`)
+  stats.forEach(s => {
+    console.log(`  ${s.startDate?.toLocaleTimeString()}: ${s.averageQuantity?.quantity} BPM`)
+  })
+})
+```
+
+<Tip>
+  Use the "separate by source" variants when you need to attribute data to specific apps or devices, which is useful for data provenance and conflict resolution.
+</Tip>
+
+<Note>
+  Statistics queries are more efficient than fetching all samples and computing statistics manually, especially for large datasets.
+</Note>

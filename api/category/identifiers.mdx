@@ -1,0 +1,542 @@
+---
+title: 'Category Type Identifiers'
+description: 'All available HealthKit category type identifiers'
+icon: 'list'
+---
+
+## Overview
+
+Category samples in HealthKit represent data that fits into a predefined set of values. This page lists all 67 available category type identifiers.
+
+## Read-Only Categories
+
+These category types are automatically tracked by Apple Watch or iOS and cannot be written by third-party apps.
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierAppleStandHour" icon="apple">
+    Tracks whether the user stood during a particular hour.
+    
+    **Values**: `CategoryValueAppleStandHour`
+    - `stood` (0)
+    - `idle` (1)
+    
+    **Read-only**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHighHeartRateEvent" icon="heart-pulse">
+    Records events when the user's heart rate exceeds a specified threshold.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Read-only**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLowHeartRateEvent" icon="heart">
+    Records events when the user's heart rate falls below a specified threshold.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Read-only**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHeadphoneAudioExposureEvent" icon="headphones">
+    Tracks when headphone audio exposure exceeds safe listening levels.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Read-only**: Yes
+  </Accordion>
+</AccordionGroup>
+
+## Sleep & Activity
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierSleepAnalysis" icon="bed">
+    Represents sleep stages and in-bed time.
+    
+    **Values**: `CategoryValueSleepAnalysis`
+    - `inBed` (0)
+    - `asleepUnspecified` (1)
+    - `awake` (2)
+    - `asleepCore` (3)
+    - `asleepDeep` (4)
+    - `asleepREM` (5)
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSleepApneaEvent" icon="wind">
+    Records sleep apnea events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 18+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierMindfulSession" icon="brain">
+    Tracks mindfulness or meditation sessions.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierToothbrushingEvent" icon="tooth">
+    Records toothbrushing events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHandwashingEvent" icon="hands-bubbles">
+    Tracks handwashing events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+</AccordionGroup>
+
+## Reproductive Health
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierCervicalMucusQuality" icon="droplet">
+    Tracks cervical mucus quality.
+    
+    **Values**: `CategoryValueCervicalMucusQuality`
+    - `dry` (1)
+    - `sticky` (2)
+    - `creamy` (3)
+    - `watery` (4)
+    - `eggWhite` (5)
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierOvulationTestResult" icon="flask">
+    Records ovulation test results.
+    
+    **Values**: `CategoryValueOvulationTestResult`
+    - `negative` (1)
+    - `luteinizingHormoneSurge` (2)
+    - `indeterminate` (3)
+    - `estrogenSurge` (4)
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierMenstrualFlow" icon="droplet">
+    Tracks menstrual flow.
+    
+    **Values**: `CategoryValueMenstrualFlow`
+    - `unspecified` (1)
+    - `none` (5)
+    - `light` (2)
+    - `medium` (3)
+    - `heavy` (4)
+    
+    **Writeable**: Yes
+    
+    **Deprecated**: In iOS 18 beta
+    
+    **Metadata**: Supports `HKMenstrualCycleStart` boolean
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierIntermenstrualBleeding" icon="droplet">
+    Records spotting or bleeding between periods.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierInfrequentMenstrualCycles" icon="calendar-xmark">
+    Tracks infrequent menstrual cycles.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 16+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierIrregularMenstrualCycles" icon="calendar-exclamation">
+    Records irregular menstrual cycles.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 16+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierPersistentIntermenstrualBleeding" icon="droplet">
+    Tracks persistent intermenstrual bleeding.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 16+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierProlongedMenstrualPeriods" icon="calendar-days">
+    Records prolonged menstrual periods.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 16+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSexualActivity" icon="heart">
+    Tracks sexual activity.
+    
+    **Values**: `CategoryValueNotApplicable.notApplicable`
+    
+    **Writeable**: Yes
+    
+    **Metadata**: Supports `HKSexualActivityProtectionUsed` boolean
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierContraceptive" icon="pills">
+    Records contraceptive use.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLactation" icon="baby">
+    Tracks lactation periods.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierPregnancy" icon="person-pregnant">
+    Records pregnancy.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierPregnancyTestResult" icon="flask-vial">
+    Records pregnancy test results.
+    
+    **Values**: `CategoryValuePregnancyTestResult`
+    - `positive` (2)
+    - `negative` (1)
+    - `indeterminate` (3)
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierProgesteroneTestResult" icon="flask">
+    Records progesterone test results.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierBleedingAfterPregnancy" icon="droplet">
+    Tracks bleeding after pregnancy.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 18+
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierBleedingDuringPregnancy" icon="droplet">
+    Records bleeding during pregnancy.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Available**: iOS 18+
+  </Accordion>
+</AccordionGroup>
+
+## Heart Health
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierIrregularHeartRhythmEvent" icon="heart-pulse">
+    Records irregular heart rhythm events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLowCardioFitnessEvent" icon="heart-crack">
+    Tracks low cardio fitness events.
+    
+    **Values**: `CategoryValueLowCardioFitnessEvent`
+    - `lowFitness` (1)
+    
+    **Writeable**: Yes
+  </Accordion>
+</AccordionGroup>
+
+## Environmental & Safety
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierAudioExposureEvent" icon="volume-high">
+    Records audio exposure events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+    
+    **Deprecated**: Use `HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent` instead
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent" icon="volume-high">
+    Tracks environmental audio exposure events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierAppleWalkingSteadinessEvent" icon="person-walking">
+    Records walking steadiness events.
+    
+    **Values**: `number`
+    
+    **Writeable**: Yes
+  </Accordion>
+</AccordionGroup>
+
+## Symptoms
+
+All symptom identifiers use severity-based values unless otherwise noted.
+
+### Digestive Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierAbdominalCramps" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity` (notPresent, mild, moderate, severe, unspecified)
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierAppetiteChanges" icon="utensils">
+    **Values**: `CategoryValueAppetiteChanges`
+    - `decreased` (2)
+    - `increased` (3)
+    - `noChange` (1)
+    - `unspecified` (0)
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierBloating" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierConstipation" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierDiarrhea" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHeartburn" icon="fire">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierNausea" icon="face-dizzy">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierVomiting" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+### Respiratory Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierChestTightnessOrPain" icon="lungs">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierCoughing" icon="head-side-cough">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierRunnyNose" icon="tissue">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierShortnessOfBreath" icon="lungs">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSinusCongestion" icon="head-side-virus">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSoreThroat" icon="head-side-cough">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierWheezing" icon="wind">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+### Cardiovascular Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat" icon="heart-pulse">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSkippedHeartbeat" icon="heart">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+### Pain Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierBreastPain" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierGeneralizedBodyAche" icon="person">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHeadache" icon="head-side-virus">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLowerBackPain" icon="person">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierPelvicPain" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+### Neurological Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierDizziness" icon="head-side-virus">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierFainting" icon="person-falling">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierMemoryLapse" icon="brain">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+### General Symptoms
+
+<AccordionGroup>
+  <Accordion title="HKCategoryTypeIdentifierAcne" icon="face-frown">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierBladderIncontinence" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierChills" icon="temperature-low">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierDrySkin" icon="hand">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierFatigue" icon="battery-quarter">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierFever" icon="temperature-high">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHairLoss" icon="person">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierHotFlashes" icon="fire">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLossOfSmell" icon="nose">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierLossOfTaste" icon="tongue">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierMoodChanges" icon="face-smile">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierNightSweats" icon="droplet">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierSleepChanges" icon="bed">
+    **Values**: `CategoryValueAppetiteChanges` (same enum, different context)
+  </Accordion>
+  
+  <Accordion title="HKCategoryTypeIdentifierVaginalDryness" icon="circle-exclamation">
+    **Values**: `CategoryValueSeverity`
+  </Accordion>
+</AccordionGroup>
+
+## Type Reference
+
+### CategoryValueSeverity
+
+```typescript
+enum CategoryValueSeverity {
+  notPresent = 1,
+  mild = 2,
+  moderate = 3,
+  severe = 4,
+  unspecified = 0,
+}
+```
+
+### CategoryValuePresence
+
+```typescript
+enum CategoryValuePresence {
+  notPresent = 1,
+  present = 0,
+}
+```
+
+### CategoryValueNotApplicable
+
+```typescript
+enum CategoryValueNotApplicable {
+  notApplicable = 0,
+}
+```
+
+<Note>
+  See the [Apple HealthKit Documentation](https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier) for detailed information about each category type.
+</Note>

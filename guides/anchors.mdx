@@ -1,0 +1,328 @@
+---
+title: Anchors
+description: Learn how to use HealthKit anchors for efficient data synchronization
+---
+
+HealthKit anchors enable efficient data synchronization by tracking which samples you've already fetched. Instead of querying all data repeatedly, anchors let you fetch only what's new or changed since your last query.
+
+## What are anchors?
+
+An anchor is a base64-encoded string returned by HealthKit that represents a sync point. After each successful query, HealthKit provides a new anchor representing the current state. Use this anchor in your next query to receive only samples added or deleted since then.
+
+## Query with anchors
+
+Use anchor-based query functions to get incremental updates:
+
+```typescript
+import { queryQuantitySamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+// Initial query without anchor
+const { newAnchor, samples, deletedSamples } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 0  // 0 means no limit
+  }
+);
+
+console.log('Samples:', samples.length);
+console.log('Deleted:', deletedSamples.length);
+console.log('Anchor:', newAnchor);
+
+// Store the anchor for next time
+await AsyncStorage.setItem('stepCountAnchor', newAnchor);
+```
+
+## Incremental sync
+
+On subsequent queries, use the stored anchor to get only new changes:
+
+```typescript
+// Retrieve stored anchor
+const storedAnchor = await AsyncStorage.getItem('stepCountAnchor');
+
+// Query for changes since last sync
+const { newAnchor, samples, deletedSamples } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 0,
+    anchor: storedAnchor
+  }
+);
+
+console.log('New samples:', samples.length);
+console.log('Deleted samples:', deletedSamples.length);
+
+// Update stored anchor
+await AsyncStorage.setItem('stepCountAnchor', newAnchor);
+```
+
+<Note>
+Anchor queries return both new samples and deleted samples. Handle deletions to keep your local data synchronized with HealthKit.
+</Note>
+
+## Limit parameter
+
+Control how many samples to fetch per sync:
+
+```typescript
+// Fetch in batches of 100
+const result = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 100,
+    anchor: storedAnchor
+  }
+);
+
+// Continue fetching until no more samples
+while (result.samples.length === 100) {
+  const nextResult = await queryQuantitySamplesWithAnchor(
+    'HKQuantityTypeIdentifierStepCount',
+    {
+      limit: 100,
+      anchor: result.newAnchor
+    }
+  );
+  // Process nextResult...
+}
+```
+
+## Deleted samples
+
+The `deletedSamples` array contains UUIDs of removed data:
+
+```typescript
+const { samples, deletedSamples, newAnchor } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 0,
+    anchor: storedAnchor
+  }
+);
+
+// Handle deletions
+for (const deleted of deletedSamples) {
+  console.log('Deleted sample UUID:', deleted.uuid);
+  // Remove from your local database
+  await database.delete('samples', { uuid: deleted.uuid });
+}
+
+// Handle additions
+for (const sample of samples) {
+  console.log('New sample:', sample);
+  // Add to your local database
+  await database.insert('samples', sample);
+}
+```
+
+## Category samples with anchors
+
+Anchor queries work with all sample types:
+
+```typescript
+import { queryCategorySamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+const { newAnchor, samples, deletedSamples } = await queryCategorySamplesWithAnchor(
+  'HKCategoryTypeIdentifierSleepAnalysis',
+  {
+    limit: 0,
+    anchor: storedAnchor
+  }
+);
+```
+
+## Workout samples with anchors
+
+Sync workout data efficiently:
+
+```typescript
+import { queryWorkoutSamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+const { workouts, deletedSamples, newAnchor } = await queryWorkoutSamplesWithAnchor({
+  limit: 0,
+  anchor: storedAnchor
+});
+
+console.log('New workouts:', workouts.length);
+console.log('Deleted workouts:', deletedSamples.length);
+```
+
+<Note>
+Note that workout anchor queries return `workouts` instead of `samples` in the response object.
+</Note>
+
+## Correlation samples with anchors
+
+Sync correlation data like blood pressure:
+
+```typescript
+import { queryCorrelationSamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+const { correlations, deletedSamples, newAnchor } = await queryCorrelationSamplesWithAnchor(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  {
+    limit: 0,
+    anchor: storedAnchor
+  }
+);
+```
+
+## Best practices for syncing
+
+<Steps>
+
+<Step title="Store anchors persistently">
+Save anchors to persistent storage (AsyncStorage, database, etc.) so you can resume syncing after app restarts.
+
+```typescript
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ANCHOR_KEY = 'healthkit_anchor_steps';
+
+// Save anchor
+await AsyncStorage.setItem(ANCHOR_KEY, newAnchor);
+
+// Load anchor
+const anchor = await AsyncStorage.getItem(ANCHOR_KEY);
+```
+</Step>
+
+<Step title="Use separate anchors per data type">
+Each data type should have its own anchor for independent syncing.
+
+```typescript
+const anchors = {
+  steps: await AsyncStorage.getItem('anchor_steps'),
+  heartRate: await AsyncStorage.getItem('anchor_heartRate'),
+  sleep: await AsyncStorage.getItem('anchor_sleep'),
+};
+```
+</Step>
+
+<Step title="Handle errors gracefully">
+If a sync fails, keep the old anchor to retry from the same point.
+
+```typescript
+try {
+  const result = await queryQuantitySamplesWithAnchor(
+    'HKQuantityTypeIdentifierStepCount',
+    { limit: 0, anchor: oldAnchor }
+  );
+  
+  // Process data...
+  
+  // Only save anchor after successful processing
+  await AsyncStorage.setItem('anchor_steps', result.newAnchor);
+} catch (error) {
+  console.error('Sync failed, will retry:', error);
+  // Keep old anchor for retry
+}
+```
+</Step>
+
+<Step title="Implement periodic syncing">
+Regularly sync data in the background or when the app opens.
+
+```typescript
+useEffect(() => {
+  const syncData = async () => {
+    const anchor = await AsyncStorage.getItem('anchor_steps');
+    
+    const result = await queryQuantitySamplesWithAnchor(
+      'HKQuantityTypeIdentifierStepCount',
+      { limit: 0, anchor }
+    );
+    
+    // Process result...
+    
+    await AsyncStorage.setItem('anchor_steps', result.newAnchor);
+  };
+  
+  syncData();
+  
+  // Sync every hour
+  const interval = setInterval(syncData, 60 * 60 * 1000);
+  
+  return () => clearInterval(interval);
+}, []);
+```
+</Step>
+
+</Steps>
+
+## Combine with filters
+
+Anchors work with all query filters:
+
+```typescript
+const { samples, deletedSamples, newAnchor } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  {
+    limit: 0,
+    anchor: storedAnchor,
+    filter: {
+      date: {
+        startDate: new Date(2024, 0, 1)
+      }
+    }
+  }
+);
+```
+
+## Initial vs incremental sync
+
+Pattern for handling first sync vs updates:
+
+```typescript
+async function syncSteps() {
+  const anchor = await AsyncStorage.getItem('anchor_steps');
+  
+  const result = await queryQuantitySamplesWithAnchor(
+    'HKQuantityTypeIdentifierStepCount',
+    {
+      limit: 0,
+      anchor: anchor ?? undefined  // undefined for initial sync
+    }
+  );
+  
+  if (!anchor) {
+    // Initial sync - full data load
+    console.log('Initial sync:', result.samples.length, 'samples');
+    await initializeDatabase(result.samples);
+  } else {
+    // Incremental sync - only changes
+    console.log('Incremental sync:', result.samples.length, 'new,', 
+                result.deletedSamples.length, 'deleted');
+    await updateDatabase(result.samples, result.deletedSamples);
+  }
+  
+  await AsyncStorage.setItem('anchor_steps', result.newAnchor);
+}
+```
+
+<Warning>
+Never reuse an anchor with a different data type. Each identifier requires its own anchor. Using the wrong anchor will return incorrect results.
+</Warning>
+
+## Performance benefits
+
+Anchors dramatically improve sync performance:
+
+```typescript
+// Without anchors - queries ALL samples every time
+const allSamples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  limit: 0
+});
+console.log('Fetched:', allSamples.length); // Could be 100,000+ samples
+
+// With anchors - queries only CHANGES since last sync
+const { samples } = await queryQuantitySamplesWithAnchor(
+  'HKQuantityTypeIdentifierStepCount',
+  { limit: 0, anchor: storedAnchor }
+);
+console.log('Fetched:', samples.length); // Typically 0-100 samples
+```
+
+<Tip>
+For apps that sync health data to a server, anchors are essential. They minimize data transfer, reduce battery usage, and ensure you never miss changes or deletions.
+</Tip>

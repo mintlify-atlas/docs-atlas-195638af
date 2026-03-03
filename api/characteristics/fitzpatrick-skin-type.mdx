@@ -1,0 +1,117 @@
+---
+title: "Fitzpatrick Skin Type"
+description: "Get the user's Fitzpatrick skin type from HealthKit"
+---
+
+## Overview
+
+The Fitzpatrick skin type is a classification system for skin types based on their response to sun exposure. It ranges from Type I (very fair skin that always burns) to Type VI (deeply pigmented dark skin that never burns).
+
+## getFitzpatrickSkinType
+
+Retrieve the user's Fitzpatrick skin type stored in HealthKit. This is a synchronous operation.
+
+### Signature
+
+```typescript
+function getFitzpatrickSkinType(): FitzpatrickSkinType
+```
+
+### Returns
+
+<ResponseField name="skinType" type="FitzpatrickSkinType">
+  The Fitzpatrick skin type value as an enum:
+  - `FitzpatrickSkinType.notSet` (0) - Not set or unknown
+  - `FitzpatrickSkinType.I` (1) - Type I: Pale white skin, always burns, never tans
+  - `FitzpatrickSkinType.II` (2) - Type II: White skin, usually burns, tans minimally
+  - `FitzpatrickSkinType.III` (3) - Type III: White to light brown skin, sometimes burns, tans uniformly
+  - `FitzpatrickSkinType.IV` (4) - Type IV: Moderate brown skin, burns minimally, tans easily
+  - `FitzpatrickSkinType.V` (5) - Type V: Dark brown skin, rarely burns, tans very easily
+  - `FitzpatrickSkinType.VI` (6) - Type VI: Deeply pigmented dark brown to black skin, never burns
+</ResponseField>
+
+### Example
+
+```typescript
+import { getFitzpatrickSkinType, FitzpatrickSkinType } from '@kingstinct/react-native-healthkit'
+
+const skinType = getFitzpatrickSkinType()
+
+const skinTypeDescriptions: Record<FitzpatrickSkinType, string> = {
+  [FitzpatrickSkinType.notSet]: 'Not Set',
+  [FitzpatrickSkinType.I]: 'Type I - Very Fair',
+  [FitzpatrickSkinType.II]: 'Type II - Fair',
+  [FitzpatrickSkinType.III]: 'Type III - Medium',
+  [FitzpatrickSkinType.IV]: 'Type IV - Olive',
+  [FitzpatrickSkinType.V]: 'Type V - Brown',
+  [FitzpatrickSkinType.VI]: 'Type VI - Dark Brown/Black',
+}
+
+console.log('Skin type:', skinTypeDescriptions[skinType])
+
+// Provide sun protection recommendations based on skin type
+if (skinType === FitzpatrickSkinType.I || skinType === FitzpatrickSkinType.II) {
+  console.log('Recommendation: Use SPF 30+ sunscreen, seek shade, wear protective clothing')
+} else if (skinType === FitzpatrickSkinType.III || skinType === FitzpatrickSkinType.IV) {
+  console.log('Recommendation: Use SPF 15-30 sunscreen, moderate sun exposure')
+} else if (skinType === FitzpatrickSkinType.V || skinType === FitzpatrickSkinType.VI) {
+  console.log('Recommendation: Use SPF 15 sunscreen for extended sun exposure')
+}
+```
+
+---
+
+## getFitzpatrickSkinTypeAsync
+
+Asynchronous version of getFitzpatrickSkinType. Use this if you need to await the result or want consistency with other async HealthKit operations.
+
+### Signature
+
+```typescript
+function getFitzpatrickSkinTypeAsync(): Promise<FitzpatrickSkinType>
+```
+
+### Returns
+
+<ResponseField name="skinType" type="Promise<FitzpatrickSkinType>">
+  Promise that resolves to the Fitzpatrick skin type value
+</ResponseField>
+
+### Example
+
+```typescript
+import { getFitzpatrickSkinTypeAsync, FitzpatrickSkinType } from '@kingstinct/react-native-healthkit'
+
+const skinType = await getFitzpatrickSkinTypeAsync()
+
+if (skinType !== FitzpatrickSkinType.notSet) {
+  // Calculate recommended sun exposure time
+  const sunExposureMinutes: Record<FitzpatrickSkinType, number> = {
+    [FitzpatrickSkinType.notSet]: 0,
+    [FitzpatrickSkinType.I]: 10,
+    [FitzpatrickSkinType.II]: 15,
+    [FitzpatrickSkinType.III]: 20,
+    [FitzpatrickSkinType.IV]: 30,
+    [FitzpatrickSkinType.V]: 45,
+    [FitzpatrickSkinType.VI]: 60,
+  }
+  
+  console.log(
+    `Safe sun exposure without protection: ~${sunExposureMinutes[skinType]} minutes`
+  )
+} else {
+  console.log('Skin type not set - please set in Health app for personalized recommendations')
+}
+```
+
+<Note>
+  Fitzpatrick skin type is a characteristic stored in the user's HealthKit profile. It cannot be changed by apps and is set by the user in the Health app settings.
+</Note>
+
+<Info>
+  You need to request read authorization for characteristics before accessing this data. This is typically done during initial app setup with `requestAuthorization`.
+</Info>
+
+<Tip>
+  Fitzpatrick skin type is useful for apps that provide sun exposure guidance, UV protection recommendations, or track time spent in daylight for health purposes.
+</Tip>

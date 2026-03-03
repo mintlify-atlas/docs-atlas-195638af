@@ -1,0 +1,181 @@
+---
+title: 'Heartbeat Series'
+description: 'Query heartbeat series samples from HealthKit'
+---
+
+## Overview
+
+Heartbeat series data contains individual heartbeat timing information, including whether each heartbeat was preceded by a gap in data collection. This data is typically captured during workouts or ECG recordings.
+
+## Functions
+
+### queryHeartbeatSeriesSamples
+
+Query heartbeat series samples from HealthKit.
+
+```typescript
+import { HeartbeatSeries } from '@kingstinct/react-native-healthkit/modules';
+
+const samples = await HeartbeatSeries.queryHeartbeatSeriesSamples({
+  limit: 20,
+  ascending: false,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithSortOrder">
+  Query options for heartbeat series samples
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="20">
+      Maximum number of samples to return
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by date
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+Returns a Promise resolving to an array of `HeartbeatSeriesSample` objects.
+
+```typescript
+interface HeartbeatSeriesSample {
+  readonly uuid: string;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly heartbeats: readonly Heartbeat[];
+}
+
+interface Heartbeat {
+  readonly timeSinceSeriesStart: number; // seconds
+  readonly precededByGap: boolean;
+}
+```
+
+### queryHeartbeatSeriesSamplesWithAnchor
+
+Query heartbeat series samples with anchor-based pagination for efficient syncing.
+
+```typescript
+import { HeartbeatSeries } from '@kingstinct/react-native-healthkit/modules';
+
+// Initial query
+const { samples, deletedSamples, newAnchor } = 
+  await HeartbeatSeries.queryHeartbeatSeriesSamplesWithAnchor({
+    limit: 20,
+  });
+
+// Next page
+const nextResult = await HeartbeatSeries.queryHeartbeatSeriesSamplesWithAnchor({
+  anchor: newAnchor,
+  limit: 20,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithAnchor">
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="0">
+      Maximum number of samples to return. Set to 0 for no limit.
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Base64-encoded anchor from previous query. Omit for initial query.
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+```typescript
+interface HeartbeatSeriesSamplesWithAnchorResponse {
+  readonly samples: readonly HeartbeatSeriesSample[];
+  readonly deletedSamples: readonly DeletedSample[];
+  readonly newAnchor: string;
+}
+```
+
+<ResponseField name="samples" type="HeartbeatSeriesSample[]">
+  New or modified heartbeat series samples since the last anchor
+</ResponseField>
+
+<ResponseField name="deletedSamples" type="DeletedSample[]">
+  Samples that were deleted since the last anchor
+</ResponseField>
+
+<ResponseField name="newAnchor" type="string">
+  Base64-encoded anchor to use for the next query
+</ResponseField>
+
+## Usage Example
+
+```typescript
+import { HeartbeatSeries } from '@kingstinct/react-native-healthkit/modules';
+import { requestAuthorization } from '@kingstinct/react-native-healthkit';
+
+// Request authorization first
+await requestAuthorization({ 
+  toRead: ['HKDataTypeIdentifierHeartbeatSeries'] 
+});
+
+// Query heartbeat series
+const samples = await HeartbeatSeries.queryHeartbeatSeriesSamples({
+  limit: 20,
+  ascending: false,
+});
+
+samples.forEach((sample) => {
+  console.log(`Series with ${sample.heartbeats.length} heartbeats`);
+  console.log(`Duration: ${sample.endDate.getTime() - sample.startDate.getTime()}ms`);
+  
+  sample.heartbeats.forEach((beat, index) => {
+    console.log(
+      `Beat ${index + 1}: ${beat.timeSinceSeriesStart}s` +
+      (beat.precededByGap ? ' (gap before)' : '')
+    );
+  });
+});
+```
+
+## Pagination Example
+
+```typescript
+import { HeartbeatSeries } from '@kingstinct/react-native-healthkit/modules';
+
+let anchor: string | undefined;
+let allSamples: HeartbeatSeriesSample[] = [];
+
+// Fetch all pages
+do {
+  const { samples, newAnchor } = 
+    await HeartbeatSeries.queryHeartbeatSeriesSamplesWithAnchor({
+      anchor,
+      limit: 100,
+    });
+  
+  allSamples = [...allSamples, ...samples];
+  anchor = samples.length > 0 ? newAnchor : undefined;
+} while (anchor);
+
+console.log(`Total heartbeat series: ${allSamples.length}`);
+```
+
+## See Also
+
+- [Apple HealthKit Heartbeat Series Documentation](https://developer.apple.com/documentation/healthkit/hkheartbeatseriessample)
+- [queryElectrocardiogramSamples](/api/advanced/electrocardiogram) - Related ECG data

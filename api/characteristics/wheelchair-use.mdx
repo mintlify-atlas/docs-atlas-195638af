@@ -1,0 +1,140 @@
+---
+title: "Wheelchair Use"
+description: "Get the user's wheelchair use status from HealthKit"
+---
+
+## getWheelchairUse
+
+Retrieve whether the user uses a wheelchair, as stored in HealthKit. This is a synchronous operation.
+
+### Signature
+
+```typescript
+function getWheelchairUse(): WheelchairUse
+```
+
+### Returns
+
+<ResponseField name="wheelchairUse" type="WheelchairUse">
+  The wheelchair use status as an enum:
+  - `WheelchairUse.notSet` (0) - Not set or unknown
+  - `WheelchairUse.notUsingWheelchair` (1) - User does not use a wheelchair
+  - `WheelchairUse.usingWheelchair` (2) - User uses a wheelchair
+</ResponseField>
+
+### Example
+
+```typescript
+import { getWheelchairUse, WheelchairUse } from '@kingstinct/react-native-healthkit'
+
+const wheelchairUse = getWheelchairUse()
+
+switch (wheelchairUse) {
+  case WheelchairUse.usingWheelchair:
+    console.log('User uses a wheelchair')
+    // Enable wheelchair-specific features
+    break
+  case WheelchairUse.notUsingWheelchair:
+    console.log('User does not use a wheelchair')
+    break
+  case WheelchairUse.notSet:
+  default:
+    console.log('Wheelchair use not set')
+    break
+}
+```
+
+---
+
+## getWheelchairUseAsync
+
+Asynchronous version of getWheelchairUse. Use this if you need to await the result or want consistency with other async HealthKit operations.
+
+### Signature
+
+```typescript
+function getWheelchairUseAsync(): Promise<WheelchairUse>
+```
+
+### Returns
+
+<ResponseField name="wheelchairUse" type="Promise<WheelchairUse>">
+  Promise that resolves to the wheelchair use status
+</ResponseField>
+
+### Example
+
+```typescript
+import { getWheelchairUseAsync, WheelchairUse } from '@kingstinct/react-native-healthkit'
+
+const wheelchairUse = await getWheelchairUseAsync()
+
+// Adapt workout tracking based on wheelchair use
+if (wheelchairUse === WheelchairUse.usingWheelchair) {
+  // Show wheelchair-specific workout types
+  const workoutTypes = [
+    'Wheelchair Walk Pace',
+    'Wheelchair Run Pace',
+    'Hand Cycling',
+  ]
+  console.log('Available wheelchair workouts:', workoutTypes)
+  
+  // Track wheelchair pushes instead of steps
+  console.log('Tracking: Wheelchair pushes')
+} else {
+  // Show standard workout types
+  const workoutTypes = ['Walking', 'Running', 'Cycling']
+  console.log('Available workouts:', workoutTypes)
+  
+  // Track steps
+  console.log('Tracking: Steps')
+}
+```
+
+### Example: Personalized Fitness Goals
+
+```typescript
+import { getWheelchairUseAsync, WheelchairUse } from '@kingstinct/react-native-healthkit'
+
+const wheelchairUse = await getWheelchairUseAsync()
+
+if (wheelchairUse === WheelchairUse.usingWheelchair) {
+  // Set wheelchair-appropriate fitness goals
+  const dailyGoals = {
+    pushes: 1000, // wheelchair pushes
+    activeMinutes: 30,
+    distance: 5000, // meters
+  }
+  
+  console.log('Daily goals:', dailyGoals)
+} else if (wheelchairUse === WheelchairUse.notUsingWheelchair) {
+  // Set standard fitness goals
+  const dailyGoals = {
+    steps: 10000,
+    activeMinutes: 30,
+    distance: 5000, // meters
+  }
+  
+  console.log('Daily goals:', dailyGoals)
+}
+```
+
+<Note>
+  Wheelchair use is a characteristic stored in the user's HealthKit profile. It cannot be changed by apps and is set by the user in the Health app settings.
+</Note>
+
+<Info>
+  You need to request read authorization for characteristics before accessing this data. This is typically done during initial app setup with `requestAuthorization`.
+</Info>
+
+<Tip>
+  Knowing wheelchair use status allows you to:
+  - Show appropriate workout types (wheelchair walk pace, wheelchair run pace, hand cycling)
+  - Track wheelchair pushes instead of steps
+  - Provide personalized fitness goals and recommendations
+  - Adapt UI/UX for better accessibility
+</Tip>
+
+<Warning>
+  Always handle the `notSet` case gracefully, as many users may not have set this preference. Consider defaulting to showing all activity options when not set.
+</Warning>

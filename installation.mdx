@@ -1,0 +1,195 @@
+---
+title: Installation
+description: Install React Native HealthKit in your Expo or bare React Native app
+---
+
+Choose your installation method based on your project setup.
+
+<Note>
+  HealthKit is only available on iOS devices and simulators. This library will not work on Android.
+</Note>
+
+<Tabs>
+  <Tab title="Expo">
+    ## Expo installation
+
+    Usage with Expo is possible - just keep in mind it will not work in Expo Go and you'll need to roll your own [Dev Client](https://docs.expo.dev/development/getting-started/).
+
+    <Steps>
+      <Step title="Install the package">
+        Install the package and its peer dependency:
+
+        ```bash
+        npm install @kingstinct/react-native-healthkit react-native-nitro-modules
+        ```
+
+        Or with yarn:
+
+        ```bash
+        yarn add @kingstinct/react-native-healthkit react-native-nitro-modules
+        ```
+      </Step>
+
+      <Step title="Configure the plugin">
+        Update your `app.json` with the config plugin:
+
+        ```json app.json
+        {
+          "expo": {
+            "plugins": ["@kingstinct/react-native-healthkit"]
+          }
+        }
+        ```
+
+        This will give you defaults that make the app build without any further configuration.
+
+        <Accordion title="Customize plugin options">
+          You can override the defaults:
+
+          ```json app.json
+          {
+            "expo": {
+              "plugins": [
+                ["@kingstinct/react-native-healthkit", {
+                  "NSHealthShareUsageDescription": "Your own custom usage description",
+                  "NSHealthUpdateUsageDescription": "Your own custom usage description",
+                  "background": true
+                }]
+              ]
+            }
+          }
+          ```
+
+          **Plugin options:**
+          - `NSHealthShareUsageDescription` - Message shown when requesting read permissions
+          - `NSHealthUpdateUsageDescription` - Message shown when requesting write permissions
+          - `background` - Enable background delivery (default: `false`)
+        </Accordion>
+      </Step>
+
+      <Step title="Build a new Dev Client">
+        Build a new development client to include the native module:
+
+        ```bash
+        npx expo run:ios
+        ```
+
+        Or create a development build:
+
+        ```bash
+        eas build --profile development --platform ios
+        ```
+      </Step>
+    </Steps>
+
+    <Note>
+      The library will not work in Expo Go because it requires native code. You must use a development build.
+    </Note>
+  </Tab>
+
+  <Tab title="Bare React Native">
+    ## Bare React Native installation
+
+    For native or Expo bare workflow projects.
+
+    <Steps>
+      <Step title="Install the package">
+        Install the package and its peer dependency:
+
+        ```bash
+        npm install @kingstinct/react-native-healthkit react-native-nitro-modules
+        ```
+
+        Or with yarn:
+
+        ```bash
+        yarn add @kingstinct/react-native-healthkit react-native-nitro-modules
+        ```
+      </Step>
+
+      <Step title="Install iOS dependencies">
+        Install the CocoaPods dependencies:
+
+        ```bash
+        npx pod-install
+        ```
+
+        Or navigate to the iOS folder:
+
+        ```bash
+        cd ios && pod install
+        ```
+      </Step>
+
+      <Step title="Configure Info.plist">
+        Add usage descriptions to your `Info.plist` file. These messages will be shown to users when requesting HealthKit permissions.
+
+        ```xml ios/YourApp/Info.plist
+        <key>NSHealthShareUsageDescription</key>
+        <string>We need access to your health data to track your fitness progress</string>
+        <key>NSHealthUpdateUsageDescription</key>
+        <string>We need permission to save health data from your workouts</string>
+        ```
+
+        Replace the description text with messages appropriate for your app.
+      </Step>
+
+      <Step title="Enable HealthKit capability">
+        Open your project in Xcode:
+
+        ```bash
+        open ios/YourApp.xcworkspace
+        ```
+
+        1. Select your project in the Project Navigator
+        2. Select your app target
+        3. Go to **Signing & Capabilities**
+        4. Click **+ Capability**
+        5. Add **HealthKit**
+
+        <Warning>
+          Without the HealthKit capability enabled, your app will crash when trying to use HealthKit APIs.
+        </Warning>
+      </Step>
+
+      <Step title="Add Swift bridging header (if needed)">
+        Since this package uses Swift, you might need to add a bridging header if you haven't already.
+
+        If your project doesn't have Swift files yet:
+
+        1. In Xcode, go to **File** → **New** → **File**
+        2. Choose **Swift File**
+        3. Name it anything (e.g., `Dummy.swift`)
+        4. When prompted to create a bridging header, click **Create Bridging Header**
+
+        See the [React Native docs](https://reactnative.dev/docs/native-modules-ios#exporting-swift) for more information.
+      </Step>
+    </Steps>
+
+    You're all set! Continue to the [quickstart guide](/quickstart) to start using HealthKit.
+  </Tab>
+</Tabs>
+
+## Verify installation
+
+To verify the installation was successful, try importing the library:
+
+```typescript
+import { isHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+
+const isAvailable = isHealthDataAvailable();
+console.log('HealthKit available:', isAvailable);
+```
+
+If this runs without errors, you're ready to start using HealthKit!
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Build your first HealthKit integration
+  </Card>
+  <Card title="Authorization" icon="lock" href="/core-concepts/authorization">
+    Learn about requesting permissions
+  </Card>
+</CardGroup>

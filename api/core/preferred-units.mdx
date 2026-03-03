@@ -1,0 +1,171 @@
+---
+title: Preferred units
+description: Get the user's preferred units for displaying health data
+icon: ruler
+---
+
+HealthKit respects user preferences for units (metric vs imperial, etc.). Use `getPreferredUnits` to retrieve the user's preferred units for displaying data.
+
+## Get preferred units
+
+### getPreferredUnits
+
+Retrieve the user's preferred units for one or more quantity types.
+
+```typescript
+function getPreferredUnits(
+  identifiers: readonly QuantityTypeIdentifier[],
+  forceUpdate?: boolean
+): Promise<IdentifierWithUnit[]>
+```
+
+<ParamField path="identifiers" type="QuantityTypeIdentifier[]" required>
+  Array of quantity type identifiers to get preferred units for
+</ParamField>
+
+<ParamField path="forceUpdate" type="boolean" default={false}>
+  If `true`, bypass cache and fetch fresh units from HealthKit
+</ParamField>
+
+**Returns:** `Promise<IdentifierWithUnit[]>` - Array of objects containing identifier and preferred unit
+
+```typescript
+import { getPreferredUnits } from '@kingstinct/react-native-healthkit';
+
+const units = await getPreferredUnits([
+  'HKQuantityTypeIdentifierHeight',
+  'HKQuantityTypeIdentifierBodyMass',
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+]);
+
+console.log(units);
+// [
+//   { identifier: 'HKQuantityTypeIdentifierHeight', unit: 'cm' },
+//   { identifier: 'HKQuantityTypeIdentifierBodyMass', unit: 'kg' },
+//   { identifier: 'HKQuantityTypeIdentifierDistanceWalkingRunning', unit: 'km' },
+// ]
+```
+
+## Display data with preferred units
+
+Always display health data using the user's preferred units:
+
+```typescript
+import {
+  getMostRecentQuantitySample,
+  getPreferredUnits,
+} from '@kingstinct/react-native-healthkit';
+
+// Get user's preferred unit for height
+const [{ unit }] = await getPreferredUnits(['HKQuantityTypeIdentifierHeight']);
+
+// Query height in the preferred unit
+const height = await getMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierHeight',
+  unit
+);
+
+console.log(`Height: ${height.quantity} ${height.unit}`);
+// US user: "Height: 70 in"
+// EU user: "Height: 178 cm"
+```
+
+## Caching
+
+Preferred units are cached automatically for performance. Use `forceUpdate` to refresh:
+
+```typescript
+// First call fetches from HealthKit and caches
+const units1 = await getPreferredUnits(['HKQuantityTypeIdentifierBodyMass']);
+
+// Subsequent calls use cached value
+const units2 = await getPreferredUnits(['HKQuantityTypeIdentifierBodyMass']);
+
+// Force a fresh fetch from HealthKit
+const units3 = await getPreferredUnits(
+  ['HKQuantityTypeIdentifierBodyMass'],
+  true
+);
+```
+
+<Tip>
+  Cache preferred units at app startup and reuse them throughout your app's
+  session. Only force update if the user explicitly changes their system
+  settings.
+</Tip>
+
+## Common preferred units
+
+Users in different regions typically prefer different units:
+
+| Measurement | US Preferred | Metric Preferred |
+|-------------|--------------|------------------|
+| Height | `in` (inches) | `cm` (centimeters) |
+| Weight | `lb` (pounds) | `kg` (kilograms) |
+| Distance | `mi` (miles) | `km` (kilometers) |
+| Temperature | `degF` (Fahrenheit) | `degC` (Celsius) |
+| Energy | `kcal` (kilocalories) | `kJ` (kilojoules) |
+
+## Helper function
+
+For convenience when querying a single type:
+
+```typescript
+import { getPreferredUnit } from '@kingstinct/react-native-healthkit';
+
+// Helper function for single identifier (exported by library)
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+
+console.log(unit); // "kg" or "lb"
+```
+
+## Automatic unit conversion
+
+HealthKit automatically converts between units. You can request data in any compatible unit:
+
+```typescript
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+// Request height in inches, even if stored in cm
+const { samples } = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierHeight',
+  {
+    unit: 'in',
+    limit: 1,
+  }
+);
+
+console.log(samples[0].quantity); // Automatically converted to inches
+```
+
+<Note>
+  If you don't specify a unit, HealthKit uses the user's preferred unit
+  automatically.
+</Note>
+
+## Best practices
+
+1. **Always respect user preferences** - Display data in the user's preferred units
+2. **Cache units** - Fetch once at app startup, reuse throughout session
+3. **Handle undefined** - Some quantity types may not have a preferred unit
+4. **Batch requests** - Request multiple units at once for better performance
+
+```typescript
+// ✅ Good: Batch request
+const units = await getPreferredUnits([
+  'HKQuantityTypeIdentifierHeight',
+  'HKQuantityTypeIdentifierBodyMass',
+  'HKQuantityTypeIdentifierStepCount',
+]);
+
+// ❌ Bad: Individual requests
+const heightUnit = await getPreferredUnits(['HKQuantityTypeIdentifierHeight']);
+const weightUnit = await getPreferredUnits(['HKQuantityTypeIdentifierBodyMass']);
+const stepsUnit = await getPreferredUnits(['HKQuantityTypeIdentifierStepCount']);
+```
+
+## Related APIs
+
+- [Units reference](/api/types/units)
+- [Query samples](/api/quantity/query-samples)
+- [Units guide](/core-concepts/units)

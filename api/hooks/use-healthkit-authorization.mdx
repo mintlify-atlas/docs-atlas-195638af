@@ -1,0 +1,213 @@
+---
+title: 'useHealthkitAuthorization'
+description: 'React hook to manage HealthKit authorization status and requests'
+---
+
+## Overview
+
+The `useHealthkitAuthorization` hook retrieves the current authorization status for specified HealthKit data types and provides a function to request authorization if needed.
+
+## Usage
+
+```typescript
+import { useHealthkitAuthorization } from '@kingstinct/react-native-healthkit';
+
+const [authorizationStatus, requestAuthorization] = useHealthkitAuthorization({
+  toRead: ['HKQuantityTypeIdentifierBloodGlucose', 'HKQuantityTypeIdentifierStepCount'],
+  toWrite: ['HKQuantityTypeIdentifierInsulinDelivery']
+});
+```
+
+## Parameters
+
+<ParamField path="config" type="object" required>
+  Authorization configuration object
+  
+  <Expandable title="properties">
+    <ParamField path="toRead" type="ObjectTypeIdentifier[]">
+      Array of HealthKit type identifiers you want to read
+    </ParamField>
+    
+    <ParamField path="toWrite" type="SampleTypeIdentifierWriteable[]">
+      Array of HealthKit type identifiers you want to write
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Value
+
+Returns a tuple with two elements:
+
+<ResponseField name="[0]" type="AuthorizationRequestStatus | null">
+  Current authorization status. `null` while loading.
+  
+  **AuthorizationRequestStatus values:**
+  - `unnecessary` - All permissions already granted
+  - `shouldRequest` - Should request authorization
+  - `unknown` - Status is unknown
+</ResponseField>
+
+<ResponseField name="[1]" type="() => Promise<AuthorizationRequestStatus>">
+  Function to request authorization. Returns the new authorization status.
+</ResponseField>
+
+## Example: Basic Authorization
+
+```typescript
+import { useHealthkitAuthorization } from '@kingstinct/react-native-healthkit';
+import { View, Button, Text } from 'react-native';
+
+function HealthKitAuth() {
+  const [status, request] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount'],
+    toWrite: ['HKQuantityTypeIdentifierActiveEnergyBurned']
+  });
+
+  const handleRequest = async () => {
+    const newStatus = await request();
+    console.log('New authorization status:', newStatus);
+  };
+
+  if (status === null) {
+    return <Text>Loading authorization status...</Text>;
+  }
+
+  return (
+    <View>
+      <Text>Authorization Status: {status}</Text>
+      {status !== 'unnecessary' && (
+        <Button 
+          title="Request Authorization" 
+          onPress={handleRequest} 
+        />
+      )}
+    </View>
+  );
+}
+```
+
+## Example: Conditional Data Fetching
+
+```typescript
+import { 
+  useHealthkitAuthorization, 
+  useMostRecentQuantitySample 
+} from '@kingstinct/react-native-healthkit';
+import { useEffect } from 'react';
+import { View, Button, Text } from 'react-native';
+
+function StepCounter() {
+  const [status, request] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount']
+  });
+  
+  // Only fetch data after authorization is granted
+  const stepData = status === 'unnecessary' 
+    ? useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount')
+    : undefined;
+
+  useEffect(() => {
+    if (status === 'shouldRequest') {
+      request();
+    }
+  }, [status, request]);
+
+  if (status === null) {
+    return <Text>Checking authorization...</Text>;
+  }
+
+  if (status === 'shouldRequest') {
+    return (
+      <View>
+        <Text>Authorization required</Text>
+        <Button title="Grant Access" onPress={request} />
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <Text>Steps: {stepData?.quantity || 'Loading...'}</Text>
+    </View>
+  );
+}
+```
+
+## Example: Multiple Data Types
+
+```typescript
+import { useHealthkitAuthorization } from '@kingstinct/react-native-healthkit';
+import { useState } from 'react';
+import { View, Button, Text, ActivityIndicator } from 'react-native';
+
+function HealthDataManager() {
+  const [isRequesting, setIsRequesting] = useState(false);
+  
+  const [status, request] = useHealthkitAuthorization({
+    toRead: [
+      'HKQuantityTypeIdentifierStepCount',
+      'HKQuantityTypeIdentifierHeartRate',
+      'HKQuantityTypeIdentifierActiveEnergyBurned',
+      'HKCategoryTypeIdentifierSleepAnalysis'
+    ],
+    toWrite: [
+      'HKQuantityTypeIdentifierBodyMass',
+      'HKQuantityTypeIdentifierHeight'
+    ]
+  });
+
+  const handleAuthorization = async () => {
+    setIsRequesting(true);
+    try {
+      const newStatus = await request();
+      console.log('Authorization completed:', newStatus);
+    } catch (error) {
+      console.error('Authorization failed:', error);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
+  if (status === null) {
+    return <ActivityIndicator />;
+  }
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 18, marginBottom: 10 }}>
+        Authorization Status: {status}
+      </Text>
+      
+      {status === 'unnecessary' ? (
+        <Text style={{ color: 'green' }}>All permissions granted!</Text>
+      ) : (
+        <Button 
+          title={isRequesting ? "Requesting..." : "Request Access"}
+          onPress={handleAuthorization}
+          disabled={isRequesting}
+        />
+      )}
+    </View>
+  );
+}
+```
+
+## Important Notes
+
+<Warning>
+**Request authorization before fetching data.** Failing to request authorization before using hooks like `useMostRecentQuantitySample` will cause your app to crash. Always check the authorization status first.
+</Warning>
+
+<Note>
+**iOS Privacy Behavior:** On iOS, HealthKit will never tell you if the user denied authorization for reading data. The status may show `unnecessary` even if access was denied. This is an iOS privacy feature.
+</Note>
+
+<Tip>
+For write permissions, you can reliably detect if authorization was granted or denied.
+</Tip>
+
+## See Also
+
+- [requestAuthorization](/api/core/request-authorization) - Imperative API
+- [useMostRecentQuantitySample](/api/hooks/use-most-recent-quantity-sample)
+- [Apple HealthKit Authorization Guide](https://developer.apple.com/documentation/healthkit/authorizing_access_to_health_data)

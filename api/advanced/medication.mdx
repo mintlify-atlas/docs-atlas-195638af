@@ -1,0 +1,250 @@
+---
+title: 'Medication'
+description: 'Query medications and medication dose events from HealthKit'
+---
+
+## Overview
+
+HealthKit stores medication data including user-annotated medications and dose events. This allows you to track medication adherence, schedules, and dosage information.
+
+<Note>
+Medication data is available in iOS 16.0+ and requires special authorization using `requestPerObjectReadAuthorization`.
+</Note>
+
+## Functions
+
+### queryMedications
+
+Query all user-annotated medications stored in HealthKit.
+
+```typescript
+import { queryMedications } from '@kingstinct/react-native-healthkit';
+
+const medications = await queryMedications();
+```
+
+#### Response
+
+Returns a Promise resolving to an array of `UserAnnotatedMedication` objects.
+
+```typescript
+interface UserAnnotatedMedication {
+  isArchived: boolean;
+  hasSchedule: boolean;
+  nickname?: string;
+  medication: MedicationConcept;
+}
+
+interface MedicationConcept {
+  identifier: string;
+  displayText: string;
+  generalForm: GeneralForm;
+  relatedCodings: RelatedCoding[];
+}
+```
+
+**GeneralForm types:**
+`capsule`, `cream`, `device`, `drops`, `foam`, `gel`, `inhaler`, `injection`, `liquid`, `lotion`, `ointment`, `patch`, `powder`, `spray`, `suppository`, `tablet`, `topical`, `unknown`
+
+### queryMedicationEvents
+
+Query medication dose events (when medications were taken, skipped, etc.).
+
+```typescript
+import { queryMedicationEvents } from '@kingstinct/react-native-healthkit';
+
+const events = await queryMedicationEvents({
+  limit: 100,
+  ascending: false,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithSortOrder">
+  Query options for medication events
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="20">
+      Maximum number of events to return. Use `Infinity` for all events.
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by date
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+Returns a Promise resolving to an array of `MedicationDoseEvent` objects.
+
+```typescript
+interface MedicationDoseEvent {
+  uuid: string;
+  startDate: Date;
+  endDate: Date;
+  scheduleType: MedicationDoseEventScheduleType;
+  medicationConceptIdentifier: string;
+  medicationDisplayText?: string;
+  scheduledDate?: Date;
+  scheduledDoseQuantity?: number;
+  doseQuantity?: number;
+  logStatus: MedicationDoseEventLogStatus;
+  unit: string;
+}
+```
+
+**MedicationDoseEventScheduleType:**
+- `asNeeded` (1) - Taken as needed
+- `schedule` (2) - Logged in response to a scheduled reminder
+
+**MedicationDoseEventLogStatus:**
+- `notInteracted` (1) - User hasn't interacted with the notification
+- `notificationNotSent` (2) - Notification failed to deliver
+- `snoozed` (3) - User snoozed the notification
+- `taken` (4) - User logged that they took the medication
+- `skipped` (5) - User logged that they skipped the dose
+- `notLogged` (6) - User undid a previously logged status
+
+### queryMedicationEventsWithAnchor
+
+Query medication dose events with anchor-based pagination for efficient syncing.
+
+```typescript
+import { queryMedicationEventsWithAnchor } from '@kingstinct/react-native-healthkit';
+
+const { samples, deletedSamples, newAnchor } = 
+  await queryMedicationEventsWithAnchor({
+    limit: 100,
+  });
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithAnchor">
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="0">
+      Maximum number of events to return. Set to 0 for no limit.
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Base64-encoded anchor from previous query
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+```typescript
+interface MedicationDoseEventsWithAnchorResponse {
+  readonly samples: readonly MedicationDoseEvent[];
+  readonly deletedSamples: readonly DeletedSample[];
+  readonly newAnchor: string;
+}
+```
+
+### requestMedicationsAuthorization
+
+<Warning>
+This function is deprecated. Use `requestPerObjectReadAuthorization` instead.
+</Warning>
+
+Request authorization to read medication data.
+
+```typescript
+import { requestMedicationsAuthorization } from '@kingstinct/react-native-healthkit';
+
+const granted = await requestMedicationsAuthorization();
+```
+
+## Usage Example
+
+```typescript
+import { 
+  requestMedicationsAuthorization,
+  queryMedications,
+  queryMedicationEvents 
+} from '@kingstinct/react-native-healthkit';
+
+// Request authorization
+await requestMedicationsAuthorization();
+
+// Query all medications
+const medications = await queryMedications();
+
+console.log('User Medications:');
+medications.forEach((med) => {
+  console.log(`- ${med.medication.displayText} (${med.medication.generalForm})`);
+  console.log(`  ID: ${med.medication.identifier}`);
+  console.log(`  Nickname: ${med.nickname || 'None'}`);
+  console.log(`  Archived: ${med.isArchived}`);
+  console.log(`  Has schedule: ${med.hasSchedule}`);
+});
+
+// Query recent dose events
+const events = await queryMedicationEvents({ limit: 50 });
+
+console.log('\nRecent Dose Events:');
+events.forEach((event) => {
+  const status = {
+    1: 'Not Interacted',
+    2: 'Notification Not Sent',
+    3: 'Snoozed',
+    4: 'Taken',
+    5: 'Skipped',
+    6: 'Not Logged'
+  }[event.logStatus];
+  
+  console.log(`- ${event.medicationDisplayText}: ${status}`);
+  console.log(`  Date: ${event.startDate.toLocaleString()}`);
+  if (event.doseQuantity) {
+    console.log(`  Dose: ${event.doseQuantity} ${event.unit}`);
+  }
+});
+```
+
+## Syncing with Anchors
+
+```typescript
+import { queryMedicationEventsWithAnchor } from '@kingstinct/react-native-healthkit';
+
+let anchor: string | undefined;
+let allEvents: MedicationDoseEvent[] = [];
+
+// Initial sync
+const { samples, newAnchor } = await queryMedicationEventsWithAnchor({
+  limit: 0, // Get all
+});
+
+allEvents = [...samples];
+anchor = newAnchor;
+
+// Later: sync only changes
+const { samples: newSamples, deletedSamples } = 
+  await queryMedicationEventsWithAnchor({
+    anchor,
+    limit: 0,
+  });
+
+// Update local data
+allEvents = allEvents.filter(
+  event => !deletedSamples.some(d => d.uuid === event.uuid)
+);
+allEvents = [...allEvents, ...newSamples];
+```
+
+## See Also
+
+- [Apple HealthKit Medication Documentation](https://developer.apple.com/documentation/healthkit/hkmedication)
+- [Authorization Guide](/api/core/request-authorization)

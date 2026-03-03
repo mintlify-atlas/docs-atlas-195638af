@@ -1,0 +1,153 @@
+---
+title: 'useIsHealthDataAvailable'
+description: 'React hook to check if HealthKit data is available on the device'
+---
+
+## Overview
+
+The `useIsHealthDataAvailable` hook checks whether HealthKit data is available on the current device. HealthKit is available on iOS, watchOS, and iPadOS 17+, but may be restricted in enterprise environments.
+
+## Usage
+
+```typescript
+import { useIsHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+
+const isAvailable = useIsHealthDataAvailable();
+```
+
+## Return Value
+
+<ResponseField name="isAvailable" type="boolean | null">
+  - `true` - HealthKit is available
+  - `false` - HealthKit is not available
+  - `null` - Still checking availability (initial state)
+</ResponseField>
+
+## Example: Basic Usage
+
+```typescript
+import { useIsHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+import { View, Text, ActivityIndicator } from 'react-native';
+
+function HealthKitStatus() {
+  const isAvailable = useIsHealthDataAvailable();
+
+  if (isAvailable === null) {
+    return <ActivityIndicator />;
+  }
+
+  return (
+    <View>
+      {isAvailable ? (
+        <Text>HealthKit is available on this device</Text>
+      ) : (
+        <Text>HealthKit is not available</Text>
+      )}
+    </View>
+  );
+}
+```
+
+## Example: Conditional Rendering
+
+```typescript
+import { useIsHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+import HealthDataDashboard from './HealthDataDashboard';
+
+function App() {
+  const isAvailable = useIsHealthDataAvailable();
+
+  if (isAvailable === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Checking HealthKit availability...</Text>
+      </View>
+    );
+  }
+
+  if (!isAvailable) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>HealthKit is not available on this device.</Text>
+        <Text>This app requires HealthKit to function.</Text>
+      </View>
+    );
+  }
+
+  return <HealthDataDashboard />;
+}
+```
+
+## Example: With Authorization
+
+```typescript
+import { 
+  useIsHealthDataAvailable, 
+  useHealthkitAuthorization 
+} from '@kingstinct/react-native-healthkit';
+import { View, Text, Button } from 'react-native';
+
+function HealthKitSetup() {
+  const isAvailable = useIsHealthDataAvailable();
+  const [authStatus, requestAuth] = useHealthkitAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount']
+  });
+
+  // Don't show authorization UI if HealthKit isn't available
+  if (isAvailable === false) {
+    return (
+      <View>
+        <Text>HealthKit is not available on this device</Text>
+      </View>
+    );
+  }
+
+  if (isAvailable === null || authStatus === null) {
+    return <Text>Loading...</Text>;
+  }
+
+  return (
+    <View>
+      <Text>HealthKit is ready!</Text>
+      {authStatus !== 'unnecessary' && (
+        <Button 
+          title="Grant Access" 
+          onPress={requestAuth} 
+        />
+      )}
+    </View>
+  );
+}
+```
+
+## Synchronous Alternative
+
+<Note>
+Starting with newer versions, there's also a synchronous method `Core.isHealthDataAvailable()` that can be called directly without a hook.
+</Note>
+
+```typescript
+import { Core } from '@kingstinct/react-native-healthkit/modules';
+
+// Synchronous check
+const isAvailable = Core.isHealthDataAvailable();
+```
+
+## Platform Availability
+
+- **iOS**: Always available (unless restricted)
+- **watchOS**: Always available
+- **iPadOS**: Available on iPadOS 17.0+
+- **tvOS**: Not available
+- **macOS**: Not available
+
+## Enterprise Restrictions
+
+Devices running in enterprise environments may have HealthKit access restricted by device management policies. This hook will return `false` in such cases.
+
+## See Also
+
+- [isHealthDataAvailable](/api/core/is-health-data-available) - Imperative API
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization)
+- [Apple HealthKit Availability Documentation](https://developer.apple.com/documentation/healthkit/hkhealthstore/1614180-ishealthdataavailable)

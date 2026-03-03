@@ -1,0 +1,200 @@
+---
+title: 'Save Category Sample'
+description: 'Save category samples to HealthKit'
+icon: 'floppy-disk'
+---
+
+## saveCategorySample
+
+Save a category sample to HealthKit.
+
+```typescript
+saveCategorySample<T extends CategoryTypeIdentifier>(
+  identifier: T,
+  value: CategoryValueForIdentifier,
+  startDate: Date,
+  endDate: Date,
+  metadata?: MetadataForCategoryIdentifier<T>
+): Promise<CategorySample | undefined>
+```
+
+### Parameters
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The category type identifier. See [Category Type Identifiers](/api/category/identifiers) for all available types.
+</ParamField>
+
+<ParamField path="value" type="CategoryValueForIdentifier" required>
+  The category value. The type depends on the identifier:
+  
+  - **Sleep Analysis**: `CategoryValueSleepAnalysis` (inBed, asleepUnspecified, awake, asleepCore, asleepDeep, asleepREM)
+  - **Cervical Mucus Quality**: `CategoryValueCervicalMucusQuality` (dry, sticky, creamy, watery, eggWhite)
+  - **Menstrual Flow**: `CategoryValueMenstrualFlow` (unspecified, none, light, medium, heavy)
+  - **Ovulation Test Result**: `CategoryValueOvulationTestResult` (negative, luteinizingHormoneSurge, indeterminate, estrogenSurge)
+  - **Severity-based symptoms**: `CategoryValueSeverity` (notPresent, mild, moderate, severe, unspecified)
+  - **Presence-based symptoms**: `CategoryValuePresence` (notPresent, present)
+  - **Not applicable types**: `CategoryValueNotApplicable.notApplicable`
+  - **Others**: `number` (specific enum value for the type)
+</ParamField>
+
+<ParamField path="startDate" type="Date" required>
+  The start date and time of the category sample.
+</ParamField>
+
+<ParamField path="endDate" type="Date" required>
+  The end date and time of the category sample.
+</ParamField>
+
+<ParamField path="metadata" type="MetadataForCategoryIdentifier<T>">
+  Optional metadata for the sample. Some category types support specific metadata keys:
+  
+  <Expandable title="Special metadata">
+    <ParamField path="HKSexualActivityProtectionUsed" type="boolean">
+      For `HKCategoryTypeIdentifierSexualActivity`: indicates whether protection was used.
+    </ParamField>
+    
+    <ParamField path="HKMenstrualCycleStart" type="boolean">
+      For `HKCategoryTypeIdentifierMenstrualFlow`: indicates the start of a menstrual cycle.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="sample" type="CategorySample | undefined">
+  The saved category sample, or `undefined` if the save failed.
+  
+  <Expandable title="CategorySample properties">
+    <ResponseField name="uuid" type="string">
+      Unique identifier for the saved sample.
+    </ResponseField>
+    
+    <ResponseField name="categoryType" type="CategoryTypeIdentifier">
+      The category type identifier.
+    </ResponseField>
+    
+    <ResponseField name="value" type="CategoryValueForIdentifier">
+      The category value that was saved.
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      Start date of the sample.
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      End date of the sample.
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="AnyMap">
+      Metadata associated with the sample.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+#### Save Sleep Analysis
+
+```typescript
+import HealthKit, { CategoryValueSleepAnalysis } from 'react-native-healthkit';
+
+const sleepSample = await HealthKit.saveCategorySample(
+  'HKCategoryTypeIdentifierSleepAnalysis',
+  CategoryValueSleepAnalysis.asleepCore,
+  new Date('2024-03-02T23:00:00'),
+  new Date('2024-03-03T02:30:00')
+);
+
+if (sleepSample) {
+  console.log('Sleep sample saved:', sleepSample.uuid);
+}
+```
+
+#### Save Mindful Session
+
+```typescript
+import HealthKit, { CategoryValueNotApplicable } from 'react-native-healthkit';
+
+const startTime = new Date();
+const endTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes later
+
+const mindfulSession = await HealthKit.saveCategorySample(
+  'HKCategoryTypeIdentifierMindfulSession',
+  CategoryValueNotApplicable.notApplicable,
+  startTime,
+  endTime
+);
+
+if (mindfulSession) {
+  console.log('Mindful session saved!');
+}
+```
+
+#### Save Symptom with Severity
+
+```typescript
+import HealthKit, { CategoryValueSeverity } from 'react-native-healthkit';
+
+const headacheSample = await HealthKit.saveCategorySample(
+  'HKCategoryTypeIdentifierHeadache',
+  CategoryValueSeverity.moderate,
+  new Date(),
+  new Date() // Instant sample
+);
+
+if (headacheSample) {
+  console.log('Headache logged');
+}
+```
+
+#### Save Menstrual Flow with Cycle Start
+
+```typescript
+import HealthKit, { CategoryValueMenstrualFlow } from 'react-native-healthkit';
+
+const menstrualFlowSample = await HealthKit.saveCategorySample(
+  'HKCategoryTypeIdentifierMenstrualFlow',
+  CategoryValueMenstrualFlow.medium,
+  new Date(),
+  new Date(),
+  {
+    HKMenstrualCycleStart: true, // Marks the start of a cycle
+  }
+);
+
+if (menstrualFlowSample) {
+  console.log('Menstrual flow logged with cycle start');
+}
+```
+
+#### Save Sexual Activity with Protection
+
+```typescript
+import HealthKit, { CategoryValueNotApplicable } from 'react-native-healthkit';
+
+const sexualActivitySample = await HealthKit.saveCategorySample(
+  'HKCategoryTypeIdentifierSexualActivity',
+  CategoryValueNotApplicable.notApplicable,
+  new Date(),
+  new Date(),
+  {
+    HKSexualActivityProtectionUsed: true,
+  }
+);
+
+if (sexualActivitySample) {
+  console.log('Sexual activity logged');
+}
+```
+
+<Warning>
+  Before saving category samples, ensure you have requested the appropriate write permissions using `requestAuthorization`.
+</Warning>
+
+<Note>
+  For instant events (like symptoms or one-time occurrences), set `startDate` and `endDate` to the same value.
+</Note>
+
+<Tip>
+  Use TypeScript to get type-safe category values based on the identifier you're using.
+</Tip>

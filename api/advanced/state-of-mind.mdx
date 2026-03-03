@@ -1,0 +1,228 @@
+---
+title: 'State of Mind'
+description: 'Query and save state of mind samples in HealthKit'
+---
+
+## Overview
+
+State of Mind data allows users to log their emotions and mood in HealthKit. This includes momentary emotions and daily mood tracking with valence (pleasantness), labels (specific emotions), and life context associations.
+
+<Note>
+State of Mind is available in iOS 17.0+ and requires appropriate authorization.
+</Note>
+
+## Functions
+
+### queryStateOfMindSamples
+
+Query state of mind samples from HealthKit.
+
+```typescript
+import { queryStateOfMindSamples } from '@kingstinct/react-native-healthkit';
+
+const samples = await queryStateOfMindSamples({
+  limit: 50,
+  ascending: false,
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithSortOrder">
+  Query options for state of mind samples
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="20">
+      Maximum number of samples to return
+    </ParamField>
+    
+    <ParamField path="ascending" type="boolean" default="false">
+      Sort order by date
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options for date range and other criteria
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+Returns a Promise resolving to an array of `StateOfMindSample` objects.
+
+```typescript
+interface StateOfMindSample {
+  readonly uuid: string;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly valence: number; // -1 to 1
+  readonly kind: StateOfMindKind;
+  readonly valenceClassification: StateOfMindValenceClassification;
+  readonly associations: readonly StateOfMindAssociation[];
+  readonly labels: readonly StateOfMindLabel[];
+}
+```
+
+**StateOfMindKind:**
+- `momentaryEmotion` (1) - A specific emotion at a point in time
+- `dailyMood` (2) - Overall mood for a day
+
+**StateOfMindValenceClassification:**
+- `veryUnpleasant` (1)
+- `unpleasant` (2)
+- `slightlyUnpleasant` (3)
+- `neutral` (4)
+- `slightlyPleasant` (5)
+- `pleasant` (6)
+- `veryPleasant` (7)
+
+### queryStateOfMindSamplesWithAnchor
+
+Query state of mind samples with anchor-based pagination.
+
+```typescript
+import { queryStateOfMindSamplesWithAnchor } from '@kingstinct/react-native-healthkit';
+
+const { samples, deletedSamples, newAnchor } = 
+  await queryStateOfMindSamplesWithAnchor({
+    limit: 50,
+  });
+```
+
+#### Parameters
+
+<ParamField path="options" type="QueryOptionsWithAnchor">
+  Query options with anchor support
+  
+  <Expandable title="properties">
+    <ParamField path="limit" type="number" default="0">
+      Maximum number of samples to return. Set to 0 for no limit.
+    </ParamField>
+    
+    <ParamField path="anchor" type="string">
+      Base64-encoded anchor from previous query
+    </ParamField>
+    
+    <ParamField path="filter" type="object">
+      Filter options
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Response
+
+```typescript
+interface StateOfMindSamplesWithAnchorResponse {
+  readonly samples: readonly StateOfMindSample[];
+  readonly deletedSamples: readonly DeletedSample[];
+  readonly newAnchor: string;
+}
+```
+
+### saveStateOfMindSample
+
+Save a new state of mind sample to HealthKit.
+
+```typescript
+import { 
+  saveStateOfMindSample,
+  StateOfMindKind,
+  StateOfMindLabel,
+  StateOfMindAssociation 
+} from '@kingstinct/react-native-healthkit';
+
+const sample = await saveStateOfMindSample(
+  new Date(),
+  StateOfMindKind.momentaryEmotion,
+  0.7, // valence: -1 (unpleasant) to 1 (pleasant)
+  [StateOfMindLabel.happy, StateOfMindLabel.grateful],
+  [StateOfMindAssociation.family, StateOfMindAssociation.friends],
+  { /* optional metadata */ }
+);
+```
+
+#### Parameters
+
+<ParamField path="date" type="Date" required>
+  The date and time when this state of mind was experienced
+</ParamField>
+
+<ParamField path="kind" type="StateOfMindKind" required>
+  Type of state of mind: `momentaryEmotion` (1) or `dailyMood` (2)
+</ParamField>
+
+<ParamField path="valence" type="number" required>
+  Pleasantness rating from -1 (very unpleasant) to 1 (very pleasant)
+</ParamField>
+
+<ParamField path="labels" type="StateOfMindLabel[]" required>
+  Emotion labels describing the state of mind (e.g., happy, sad, anxious)
+</ParamField>
+
+<ParamField path="associations" type="StateOfMindAssociation[]" required>
+  Life context associations (e.g., family, work, health)
+</ParamField>
+
+<ParamField path="metadata" type="object">
+  Optional metadata dictionary
+</ParamField>
+
+#### Response
+
+Returns a Promise resolving to the saved `StateOfMindSample` or `undefined`.
+
+## Available Labels
+
+The `StateOfMindLabel` enum includes:
+
+`amazed`, `amused`, `angry`, `anxious`, `ashamed`, `brave`, `calm`, `content`, `disappointed`, `discouraged`, `disgusted`, `embarrassed`, `excited`, `frustrated`, `grateful`, `guilty`, `happy`, `hopeless`, `irritated`, `jealous`, `joyful`, `lonely`, `passionate`, `peaceful`, `proud`, `relieved`, `sad`, `scared`, `stressed`, `surprised`, `worried`, `annoyed`, `confident`, `drained`, `hopeful`, `indifferent`, `overwhelmed`, `satisfied`
+
+## Available Associations
+
+The `StateOfMindAssociation` enum includes:
+
+`community`, `currentEvents`, `dating`, `education`, `family`, `fitness`, `friends`, `health`, `hobbies`, `identity`, `money`, `partner`, `selfCare`, `spirituality`, `tasks`, `travel`, `work`, `weather`
+
+## Usage Example
+
+```typescript
+import { 
+  requestAuthorization,
+  queryStateOfMindSamples,
+  saveStateOfMindSample,
+  StateOfMindKind,
+  StateOfMindLabel,
+  StateOfMindAssociation 
+} from '@kingstinct/react-native-healthkit';
+
+// Request authorization
+await requestAuthorization({ 
+  toRead: ['HKStateOfMindTypeIdentifier'],
+  toWrite: ['HKStateOfMindTypeIdentifier']
+});
+
+// Save a momentary emotion
+await saveStateOfMindSample(
+  new Date(),
+  StateOfMindKind.momentaryEmotion,
+  0.8,
+  [StateOfMindLabel.joyful, StateOfMindLabel.excited],
+  [StateOfMindAssociation.friends, StateOfMindAssociation.hobbies]
+);
+
+// Query recent state of mind samples
+const samples = await queryStateOfMindSamples({ limit: 10 });
+
+samples.forEach((sample) => {
+  console.log(`Kind: ${sample.kind === 1 ? 'Emotion' : 'Daily Mood'}`);
+  console.log(`Valence: ${sample.valence}`);
+  console.log(`Classification: ${sample.valenceClassification}`);
+  console.log(`Labels: ${sample.labels.join(', ')}`);
+  console.log(`Associations: ${sample.associations.join(', ')}`);
+});
+```
+
+## See Also
+
+- [Apple HealthKit State of Mind Documentation](https://developer.apple.com/documentation/healthkit/hkstateofmind)
+- [Authorization Guide](/api/core/request-authorization)

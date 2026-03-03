@@ -1,0 +1,315 @@
+---
+title: 'useMostRecentCategorySample'
+description: 'React hook to fetch and subscribe to the most recent category sample'
+---
+
+## Overview
+
+The `useMostRecentCategorySample` hook fetches the most recent sample for a given category type and automatically subscribes to updates. Category samples include data like sleep analysis, mindful sessions, and menstrual flow.
+
+## Usage
+
+```typescript
+import { useMostRecentCategorySample } from '@kingstinct/react-native-healthkit';
+
+const sample = useMostRecentCategorySample('HKCategoryTypeIdentifierSleepAnalysis');
+```
+
+## Parameters
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The HealthKit category type identifier (e.g., `'HKCategoryTypeIdentifierMindfulSession'`)
+</ParamField>
+
+## Return Value
+
+<ResponseField name="sample" type="CategorySampleTyped<T> | undefined">
+  The most recent category sample, or `undefined` if no data is available yet.
+  
+  ```typescript
+  interface CategorySample {
+    uuid: string;
+    categoryType: CategoryTypeIdentifier;
+    value: number;
+    startDate: Date;
+    endDate: Date;
+    metadata?: Record<string, unknown>;
+  }
+  ```
+</ResponseField>
+
+## Example: Sleep Analysis
+
+```typescript
+import { useMostRecentCategorySample } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function SleepStatus() {
+  const sleepSample = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierSleepAnalysis'
+  );
+
+  if (!sleepSample) {
+    return <Text>Loading sleep data...</Text>;
+  }
+
+  const sleepType = {
+    0: 'In Bed',
+    1: 'Asleep',
+    2: 'Awake',
+    3: 'Core',
+    4: 'Deep',
+    5: 'REM'
+  }[sleepSample.value] || 'Unknown';
+
+  const duration = sleepSample.endDate.getTime() - sleepSample.startDate.getTime();
+  const hours = Math.floor(duration / (1000 * 60 * 60));
+  const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+
+  return (
+    <View>
+      <Text style={{ fontSize: 18 }}>Last Sleep: {sleepType}</Text>
+      <Text>Duration: {hours}h {minutes}m</Text>
+      <Text>Ended: {sleepSample.endDate.toLocaleString()}</Text>
+    </View>
+  );
+}
+```
+
+## Example: Mindful Session
+
+```typescript
+import { useMostRecentCategorySample } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function MindfulnessTracker() {
+  const session = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierMindfulSession'
+  );
+
+  if (!session) {
+    return <Text>No mindful sessions recorded</Text>;
+  }
+
+  const durationMinutes = Math.round(
+    (session.endDate.getTime() - session.startDate.getTime()) / (1000 * 60)
+  );
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+        {durationMinutes} minutes
+      </Text>
+      <Text style={{ color: 'gray' }}>
+        Last session: {session.startDate.toLocaleDateString()}
+      </Text>
+    </View>
+  );
+}
+```
+
+## Example: Multiple Categories
+
+```typescript
+import { useMostRecentCategorySample } from '@kingstinct/react-native-healthkit';
+import { View, Text, StyleSheet } from 'react-native';
+
+function WellnessDashboard() {
+  const sleep = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierSleepAnalysis'
+  );
+  const mindful = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierMindfulSession'
+  );
+  const lowCardio = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierLowCardioFitnessEvent'
+  );
+
+  const formatDuration = (start: Date, end: Date) => {
+    const minutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Sleep</Text>
+        {sleep ? (
+          <>
+            <Text style={styles.value}>
+              {formatDuration(sleep.startDate, sleep.endDate)}
+            </Text>
+            <Text style={styles.subtitle}>
+              {sleep.endDate.toLocaleDateString()}
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.noData}>No data</Text>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.title}>Mindfulness</Text>
+        {mindful ? (
+          <>
+            <Text style={styles.value}>
+              {formatDuration(mindful.startDate, mindful.endDate)}
+            </Text>
+            <Text style={styles.subtitle}>
+              {mindful.startDate.toLocaleDateString()}
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.noData}>No sessions</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 20, gap: 15 },
+  card: { padding: 15, backgroundColor: '#f0f0f0', borderRadius: 10 },
+  title: { fontSize: 14, color: '#666', marginBottom: 5 },
+  value: { fontSize: 24, fontWeight: 'bold' },
+  subtitle: { fontSize: 12, color: '#999', marginTop: 5 },
+  noData: { fontSize: 16, color: '#999' }
+});
+```
+
+## Example: With Type Safety
+
+```typescript
+import { 
+  useMostRecentCategorySample,
+  CategoryTypeIdentifier 
+} from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+type Props = {
+  categoryType: CategoryTypeIdentifier;
+  label: string;
+};
+
+function CategoryCard({ categoryType, label }: Props) {
+  const sample = useMostRecentCategorySample(categoryType);
+
+  return (
+    <View style={{ padding: 15, backgroundColor: '#fff', borderRadius: 8 }}>
+      <Text style={{ fontSize: 12, color: '#666' }}>{label}</Text>
+      {sample ? (
+        <>
+          <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
+            Value: {sample.value}
+          </Text>
+          <Text style={{ fontSize: 12, color: '#999' }}>
+            {sample.endDate.toLocaleString()}
+          </Text>
+        </>
+      ) : (
+        <Text style={{ color: '#999' }}>No data available</Text>
+      )}
+    </View>
+  );
+}
+
+// Usage
+function App() {
+  return (
+    <View style={{ gap: 10, padding: 20 }}>
+      <CategoryCard 
+        categoryType="HKCategoryTypeIdentifierMindfulSession" 
+        label="Mindfulness"
+      />
+      <CategoryCard 
+        categoryType="HKCategoryTypeIdentifierSleepAnalysis" 
+        label="Sleep"
+      />
+    </View>
+  );
+}
+```
+
+## Auto-Updates
+
+The hook automatically subscribes to changes for the specified category type. When new data is saved to HealthKit, your component will re-render with the updated value.
+
+```typescript
+import { 
+  useMostRecentCategorySample,
+  saveCategorySample 
+} from '@kingstinct/react-native-healthkit';
+import { View, Text, Button } from 'react-native';
+
+function MindfulnessLogger() {
+  const session = useMostRecentCategorySample(
+    'HKCategoryTypeIdentifierMindfulSession'
+  );
+
+  const logSession = async () => {
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 10 * 60 * 1000); // 10 minutes
+    
+    // Save session - hook will automatically update
+    await saveCategorySample(
+      'HKCategoryTypeIdentifierMindfulSession',
+      0, // value
+      startDate,
+      endDate
+    );
+  };
+
+  return (
+    <View>
+      <Text>
+        Last session: {session?.startDate.toLocaleString() || 'None'}
+      </Text>
+      <Button title="Log 10-Minute Session" onPress={logSession} />
+    </View>
+  );
+}
+```
+
+## Important Notes
+
+<Warning>
+**Request authorization before using this hook.** Your app will crash if you haven't requested read authorization for the category type.
+</Warning>
+
+```typescript
+// ✅ Correct approach
+import { 
+  useHealthkitAuthorization,
+  useMostRecentCategorySample 
+} from '@kingstinct/react-native-healthkit';
+
+function MindfulnessApp() {
+  const [authStatus] = useHealthkitAuthorization({
+    toRead: ['HKCategoryTypeIdentifierMindfulSession']
+  });
+
+  const session = authStatus === 'unnecessary'
+    ? useMostRecentCategorySample('HKCategoryTypeIdentifierMindfulSession')
+    : undefined;
+
+  // ...
+}
+```
+
+## Common Category Types
+
+- `HKCategoryTypeIdentifierSleepAnalysis` - Sleep tracking
+- `HKCategoryTypeIdentifierMindfulSession` - Mindfulness/meditation
+- `HKCategoryTypeIdentifierAppleStandHour` - Stand hours
+- `HKCategoryTypeIdentifierHighHeartRateEvent` - High heart rate notifications
+- `HKCategoryTypeIdentifierLowHeartRateEvent` - Low heart rate notifications
+- `HKCategoryTypeIdentifierIrregularHeartRhythmEvent` - Irregular rhythm notifications
+
+## See Also
+
+- [getMostRecentCategorySample](/api/category/get-most-recent-category-sample) - Imperative API
+- [useMostRecentQuantitySample](/api/hooks/use-most-recent-quantity-sample) - For quantity data
+- [useSubscribeToChanges](/api/hooks/use-subscribe-to-changes) - Subscribe to changes
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) - Request authorization

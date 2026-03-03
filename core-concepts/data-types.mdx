@@ -1,0 +1,284 @@
+---
+title: Data types
+description: Understand the different types of health data available in HealthKit
+---
+
+HealthKit organizes health data into several categories, each designed for specific kinds of information. React Native HealthKit provides full TypeScript support for all data types.
+
+## Quantity types
+
+Quantity types represent numerical measurements with units. There are over 100 quantity types available:
+
+```typescript
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+  limit: 10
+});
+
+console.log(samples[0].quantity); // 1500
+console.log(samples[0].unit);     // count
+```
+
+### Common quantity types
+
+**Body measurements**
+- `HKQuantityTypeIdentifierHeight` - Height in meters/feet
+- `HKQuantityTypeIdentifierBodyMass` - Body weight
+- `HKQuantityTypeIdentifierBodyMassIndex` - BMI
+- `HKQuantityTypeIdentifierBodyFatPercentage` - Body fat %
+- `HKQuantityTypeIdentifierLeanBodyMass` - Lean body mass
+- `HKQuantityTypeIdentifierWaistCircumference` - Waist measurement
+
+**Fitness**
+- `HKQuantityTypeIdentifierStepCount` - Steps taken
+- `HKQuantityTypeIdentifierDistanceWalkingRunning` - Distance walked/ran
+- `HKQuantityTypeIdentifierDistanceCycling` - Cycling distance
+- `HKQuantityTypeIdentifierFlightsClimbed` - Stairs climbed
+- `HKQuantityTypeIdentifierActiveEnergyBurned` - Active calories
+- `HKQuantityTypeIdentifierBasalEnergyBurned` - Resting calories
+
+**Vitals**
+- `HKQuantityTypeIdentifierHeartRate` - Heart rate (BPM)
+- `HKQuantityTypeIdentifierRestingHeartRate` - Resting heart rate
+- `HKQuantityTypeIdentifierHeartRateVariabilitySDNN` - HRV (SDNN)
+- `HKQuantityTypeIdentifierRespiratoryRate` - Breathing rate
+- `HKQuantityTypeIdentifierBodyTemperature` - Body temperature
+- `HKQuantityTypeIdentifierBloodPressureSystolic` - Systolic blood pressure
+- `HKQuantityTypeIdentifierBloodPressureDiastolic` - Diastolic blood pressure
+- `HKQuantityTypeIdentifierOxygenSaturation` - Blood oxygen %
+
+**Health metrics**
+- `HKQuantityTypeIdentifierBloodGlucose` - Blood sugar
+- `HKQuantityTypeIdentifierInsulinDelivery` - Insulin dosage
+- `HKQuantityTypeIdentifierVO2Max` - VO2 max measurement
+
+**Nutrition**
+- `HKQuantityTypeIdentifierDietaryEnergyConsumed` - Calories consumed
+- `HKQuantityTypeIdentifierDietaryProtein` - Protein intake
+- `HKQuantityTypeIdentifierDietaryCarbohydrates` - Carbs intake
+- `HKQuantityTypeIdentifierDietaryFatTotal` - Fat intake
+- `HKQuantityTypeIdentifierDietaryWater` - Water intake
+
+### Read-only vs writeable types
+
+Some quantity types are read-only and computed by the system:
+
+```typescript
+type QuantityTypeIdentifierReadOnly = 
+  | 'HKQuantityTypeIdentifierWalkingHeartRateAverage'
+  | 'HKQuantityTypeIdentifierAtrialFibrillationBurden'
+  | 'HKQuantityTypeIdentifierAppleExerciseTime'
+  | 'HKQuantityTypeIdentifierAppleStandTime'
+  | 'HKQuantityTypeIdentifierAppleWalkingSteadiness';
+```
+
+You can read these types but cannot write to them. Most other quantity types are writeable.
+
+## Category types
+
+Category types represent data that falls into predefined categories. There are 63 category types:
+
+```typescript
+import { queryCategorySamples } from '@kingstinct/react-native-healthkit';
+
+const sleepSamples = await queryCategorySamples('HKCategoryTypeIdentifierSleepAnalysis', {
+  limit: 10
+});
+
+console.log(sleepSamples[0].value); // CategoryValueSleepAnalysis.asleepCore
+```
+
+### Common category types
+
+**Sleep**
+- `HKCategoryTypeIdentifierSleepAnalysis` - Sleep stages (awake, asleep, core, deep, REM)
+
+**Mindfulness**
+- `HKCategoryTypeIdentifierMindfulSession` - Meditation sessions
+
+**Reproductive health**
+- `HKCategoryTypeIdentifierMenstrualFlow` - Menstrual cycle tracking
+- `HKCategoryTypeIdentifierIntermenstrualBleeding` - Spotting
+- `HKCategoryTypeIdentifierOvulationTestResult` - Ovulation test results
+- `HKCategoryTypeIdentifierSexualActivity` - Sexual activity
+- `HKCategoryTypeIdentifierContraceptive` - Contraceptive use
+- `HKCategoryTypeIdentifierPregnancy` - Pregnancy tracking
+- `HKCategoryTypeIdentifierLactation` - Breastfeeding
+
+**Health events**
+- `HKCategoryTypeIdentifierHighHeartRateEvent` - High heart rate notifications
+- `HKCategoryTypeIdentifierLowHeartRateEvent` - Low heart rate notifications
+- `HKCategoryTypeIdentifierIrregularHeartRhythmEvent` - AFib notifications
+- `HKCategoryTypeIdentifierLowCardioFitnessEvent` - Low fitness notifications
+- `HKCategoryTypeIdentifierAppleWalkingSteadinessEvent` - Walking steadiness alerts
+- `HKCategoryTypeIdentifierHandwashingEvent` - Handwashing events
+- `HKCategoryTypeIdentifierToothbrushingEvent` - Toothbrushing events
+
+**Symptoms** (45+ types)
+- `HKCategoryTypeIdentifierHeadache`
+- `HKCategoryTypeIdentifierNausea`
+- `HKCategoryTypeIdentifierFatigue`
+- `HKCategoryTypeIdentifierDizziness`
+- And many more...
+
+## Workout activity types
+
+Workout types represent physical activities. There are 75+ workout activity types:
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit';
+
+const workout = await saveWorkoutSample({
+  workoutActivityType: WorkoutActivityType.running,
+  start: new Date(Date.now() - 1800000), // 30 min ago
+  end: new Date(),
+  totalDistance: { quantity: 5, unit: 'km' },
+  totalEnergyBurned: { quantity: 300, unit: 'kcal' }
+});
+```
+
+### Common workout types
+
+```typescript
+enum WorkoutActivityType {
+  running = 37,
+  walking = 52,
+  cycling = 13,
+  swimming = 46,
+  yoga = 57,
+  functionalStrengthTraining = 20,
+  traditionalStrengthTraining = 50,
+  highIntensityIntervalTraining = 63,
+  hiking = 24,
+  elliptical = 16,
+  stairClimbing = 44,
+  rowing = 35,
+  // ... 75+ types total
+}
+```
+
+Workouts can include:
+- Duration
+- Total distance
+- Total energy burned
+- Events (pause, resume, lap markers)
+- Routes (GPS locations)
+- Heart rate and other metrics
+
+## Correlation types
+
+Correlation types group related samples together:
+
+```typescript
+import { saveCorrelationSample } from '@kingstinct/react-native-healthkit';
+
+// Blood pressure correlation combines systolic and diastolic
+await saveCorrelationSample(
+  'HKCorrelationTypeIdentifierBloodPressure',
+  [
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureSystolic',
+      unit: 'mmHg',
+      quantity: 120
+    },
+    {
+      quantityType: 'HKQuantityTypeIdentifierBloodPressureDiastolic', 
+      unit: 'mmHg',
+      quantity: 80
+    }
+  ],
+  new Date(),
+  new Date()
+);
+```
+
+Available correlation types:
+- `HKCorrelationTypeIdentifierBloodPressure` - Systolic + diastolic readings
+- `HKCorrelationTypeIdentifierFood` - Food items with nutrition data
+
+## Document types
+
+Document types represent clinical documents:
+
+- **CDA documents** - Exposed as Base64 data for Clinical Document Architecture documents
+
+<Note>
+  Document types are read-only and cannot be written by third-party apps.
+</Note>
+
+## Clinical records
+
+Clinical records contain medical data in FHIR JSON format:
+
+- Lab results
+- Medications
+- Immunizations
+- Procedures
+- Allergies
+- Conditions
+- Vital signs from clinical visits
+
+<Warning>
+  Clinical Records access requires special approval from Apple and is not available in the current version. Use version 3.x or the "including-clinical-records" branch if you need clinical records access.
+</Warning>
+
+## Characteristic types
+
+Characteristic types represent unchanging user information:
+
+```typescript
+import { 
+  getBiologicalSex,
+  getBloodType,
+  getDateOfBirth,
+  getFitzpatrickSkinType,
+  getWheelchairUse,
+  BiologicalSex,
+  BloodType
+} from '@kingstinct/react-native-healthkit';
+
+const sex = getBiologicalSex();           // BiologicalSex.female
+const bloodType = getBloodType();         // BloodType.oPositive  
+const dob = getDateOfBirth();             // Date object
+const skinType = getFitzpatrickSkinType(); // FitzpatrickSkinType
+const wheelchair = getWheelchairUse();     // WheelchairUse
+```
+
+These are configured by the user in the Health app and cannot be written by third-party apps.
+
+## Type availability
+
+Some types are only available on specific iOS versions. Check availability before using:
+
+```typescript
+import { isObjectTypeAvailable } from '@kingstinct/react-native-healthkit';
+
+const isAvailable = isObjectTypeAvailable('HKQuantityTypeIdentifierTimeInDaylight');
+
+if (isAvailable) {
+  // iOS 17+ feature
+}
+```
+
+For multiple types:
+
+```typescript
+import { areObjectTypesAvailable } from '@kingstinct/react-native-healthkit';
+
+const availability = areObjectTypesAvailable([
+  'HKQuantityTypeIdentifierStepCount',
+  'HKQuantityTypeIdentifierTimeInDaylight'
+]);
+
+// { "HKQuantityTypeIdentifierStepCount": true, "HKQuantityTypeIdentifierTimeInDaylight": false }
+```
+
+## Related APIs
+
+- `queryQuantitySamples()` - Query quantity samples
+- `queryCategorySamples()` - Query category samples  
+- `queryWorkoutSamples()` - Query workouts
+- `queryCorrelationSamples()` - Query correlations
+- `isObjectTypeAvailable()` - Check if a type is available
+- `areObjectTypesAvailable()` - Check multiple types

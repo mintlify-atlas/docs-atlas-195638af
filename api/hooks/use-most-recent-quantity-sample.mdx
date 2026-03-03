@@ -1,0 +1,234 @@
+---
+title: 'useMostRecentQuantitySample'
+description: 'React hook to fetch and subscribe to the most recent quantity sample'
+---
+
+## Overview
+
+The `useMostRecentQuantitySample` hook fetches the most recent sample for a given quantity type and automatically subscribes to updates, ensuring your component always displays the latest data.
+
+## Usage
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+const sample = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+```
+
+## Parameters
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The HealthKit quantity type identifier (e.g., `'HKQuantityTypeIdentifierStepCount'`)
+</ParamField>
+
+<ParamField path="unit" type="string">
+  Optional unit for the quantity. Defaults to the user's preferred unit.
+</ParamField>
+
+## Return Value
+
+<ResponseField name="sample" type="QuantitySample | undefined">
+  The most recent quantity sample, or `undefined` if no data is available yet.
+  
+  ```typescript
+  interface QuantitySample {
+    uuid: string;
+    quantity: number;
+    unit: string;
+    startDate: Date;
+    endDate: Date;
+    metadata?: Record<string, unknown>;
+  }
+  ```
+</ResponseField>
+
+## Example: Display Step Count
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function StepCounter() {
+  const stepSample = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+
+  if (!stepSample) {
+    return <Text>Loading steps...</Text>;
+  }
+
+  return (
+    <View>
+      <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+        {stepSample.quantity.toLocaleString()} {stepSample.unit}
+      </Text>
+      <Text style={{ color: 'gray' }}>
+        Last updated: {stepSample.endDate.toLocaleString()}
+      </Text>
+    </View>
+  );
+}
+```
+
+## Example: Custom Unit
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function BodyFatPercentage() {
+  // Explicitly request percentage unit
+  const sample = useMostRecentQuantitySample(
+    'HKQuantityTypeIdentifierBodyFatPercentage',
+    '%'
+  );
+
+  if (!sample) {
+    return <Text>No body fat data available</Text>;
+  }
+
+  return (
+    <View>
+      <Text>Body Fat: {sample.quantity}%</Text>
+      <Text>Measured: {sample.startDate.toLocaleDateString()}</Text>
+    </View>
+  );
+}
+```
+
+## Example: Multiple Quantities
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+import { View, Text, StyleSheet } from 'react-native';
+
+function HealthDashboard() {
+  const steps = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+  const heartRate = useMostRecentQuantitySample('HKQuantityTypeIdentifierHeartRate');
+  const bloodGlucose = useMostRecentQuantitySample(
+    'HKQuantityTypeIdentifierBloodGlucose',
+    'mg/dL'
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.label}>Steps</Text>
+        <Text style={styles.value}>
+          {steps?.quantity.toLocaleString() || '--'}
+        </Text>
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.label}>Heart Rate</Text>
+        <Text style={styles.value}>
+          {heartRate ? `${heartRate.quantity} ${heartRate.unit}` : '--'}
+        </Text>
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.label}>Blood Glucose</Text>
+        <Text style={styles.value}>
+          {bloodGlucose ? `${bloodGlucose.quantity} ${bloodGlucose.unit}` : '--'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 20, gap: 15 },
+  card: { padding: 15, backgroundColor: '#f5f5f5', borderRadius: 8 },
+  label: { fontSize: 14, color: '#666' },
+  value: { fontSize: 24, fontWeight: 'bold', marginTop: 5 }
+});
+```
+
+## Example: With Metadata
+
+```typescript
+import { useMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function InsulinDelivery() {
+  const sample = useMostRecentQuantitySample(
+    'HKQuantityTypeIdentifierInsulinDelivery',
+    'IU'
+  );
+
+  if (!sample) {
+    return <Text>No insulin delivery data</Text>;
+  }
+
+  // Access metadata if available
+  const reason = sample.metadata?.HKInsulinDeliveryReason;
+
+  return (
+    <View>
+      <Text>Insulin: {sample.quantity} {sample.unit}</Text>
+      <Text>Reason: {reason || 'Unknown'}</Text>
+      <Text>Time: {sample.startDate.toLocaleTimeString()}</Text>
+    </View>
+  );
+}
+```
+
+## Auto-Updates
+
+The hook automatically subscribes to changes for the specified quantity type. When new data is saved to HealthKit, the component will re-render with the updated value.
+
+```typescript
+import { 
+  useMostRecentQuantitySample,
+  saveQuantitySample 
+} from '@kingstinct/react-native-healthkit';
+import { View, Text, Button } from 'react-native';
+
+function LiveStepCounter() {
+  const steps = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+
+  const addSteps = async () => {
+    // Save new steps - the hook will automatically update
+    await saveQuantitySample(
+      'HKQuantityTypeIdentifierStepCount',
+      'count',
+      100,
+      { startDate: new Date(), endDate: new Date() }
+    );
+  };
+
+  return (
+    <View>
+      <Text>Steps: {steps?.quantity || 0}</Text>
+      <Button title="Add 100 Steps" onPress={addSteps} />
+    </View>
+  );
+}
+```
+
+## Important Notes
+
+<Warning>
+**Ensure authorization before using this hook.** The app will crash if you haven't requested authorization for the quantity type. Use `useHealthkitAuthorization` or `requestAuthorization` first.
+</Warning>
+
+```typescript
+// ✅ Correct: Request authorization first
+const [authStatus, request] = useHealthkitAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount']
+});
+
+const steps = authStatus === 'unnecessary' 
+  ? useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount')
+  : undefined;
+```
+
+```typescript
+// ❌ Wrong: Will crash if not authorized
+const steps = useMostRecentQuantitySample('HKQuantityTypeIdentifierStepCount');
+```
+
+## See Also
+
+- [getMostRecentQuantitySample](/api/quantity/get-most-recent-quantity-sample) - Imperative API
+- [useSubscribeToChanges](/api/hooks/use-subscribe-to-changes) - Subscribe to data changes
+- [useMostRecentCategorySample](/api/hooks/use-most-recent-category-sample) - For category data
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) - Request authorization

@@ -1,0 +1,176 @@
+---
+title: "Save Workout Sample"
+description: "Save a workout sample to HealthKit with associated quantity samples and metadata"
+---
+
+## saveWorkoutSample
+
+Save a workout sample to HealthKit. You can associate quantity samples (like heart rate, distance) with the workout and include metadata.
+
+### Signature
+
+```typescript
+function saveWorkoutSample(
+  workoutActivityType: WorkoutActivityType,
+  quantities: readonly QuantitySampleForSaving[],
+  startDate: Date,
+  endDate: Date,
+  totals?: WorkoutTotals,
+  metadata?: AnyMap
+): Promise<WorkoutProxy>
+```
+
+### Parameters
+
+<ParamField path="workoutActivityType" type="WorkoutActivityType" required>
+  The type of workout activity (e.g., running, cycling, swimming). See [WorkoutActivityType enum](/api/types/workouts#workoutactivitytype) for all available types.
+</ParamField>
+
+<ParamField path="quantities" type="QuantitySampleForSaving[]" required>
+  Array of quantity samples to associate with the workout (e.g., heart rate readings, GPS locations as active energy burned). Each sample should fall within the workout's time range.
+  
+  <Expandable title="QuantitySampleForSaving properties">
+    <ParamField path="quantityType" type="QuantityTypeIdentifier" required>
+      The type of quantity (e.g., 'HKQuantityTypeIdentifierHeartRate')
+    </ParamField>
+    
+    <ParamField path="quantity" type="number" required>
+      The numeric value
+    </ParamField>
+    
+    <ParamField path="unit" type="string" required>
+      The unit for the quantity (e.g., 'count/min' for heart rate)
+    </ParamField>
+    
+    <ParamField path="startDate" type="Date" required>
+      When the sample started
+    </ParamField>
+    
+    <ParamField path="endDate" type="Date" required>
+      When the sample ended
+    </ParamField>
+    
+    <ParamField path="metadata" type="AnyMap">
+      Optional metadata for the quantity sample
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="startDate" type="Date" required>
+  When the workout started
+</ParamField>
+
+<ParamField path="endDate" type="Date" required>
+  When the workout ended
+</ParamField>
+
+<ParamField path="totals" type="WorkoutTotals">
+  Optional totals for the workout
+  
+  <Expandable title="properties">
+    <ParamField path="distance" type="number">
+      Total distance in meters
+    </ParamField>
+    
+    <ParamField path="energyBurned" type="number">
+      Total energy burned in kilocalories
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="metadata" type="AnyMap">
+  Optional metadata for the workout. Common keys include:
+  - `HKMetadataKeyIndoorWorkout` (boolean)
+  - `HKMetadataKeyAverageSpeed` (number)
+  - `HKMetadataKeyMaximumSpeed` (number)
+  - `HKMetadataKeyElevationAscended` (number)
+  - `HKMetadataKeyElevationDescended` (number)
+</ParamField>
+
+### Returns
+
+<ResponseField name="workout" type="Promise<WorkoutProxy>">
+  The saved workout as a WorkoutProxy object, which provides access to workout data and methods for adding routes or querying statistics.
+</ResponseField>
+
+### Example
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit'
+
+const startDate = new Date('2024-03-01T08:00:00')
+const endDate = new Date('2024-03-01T08:30:00')
+
+// Heart rate samples during the workout
+const heartRateSamples = [
+  {
+    quantityType: 'HKQuantityTypeIdentifierHeartRate',
+    quantity: 145,
+    unit: 'count/min',
+    startDate: new Date('2024-03-01T08:05:00'),
+    endDate: new Date('2024-03-01T08:05:00'),
+  },
+  {
+    quantityType: 'HKQuantityTypeIdentifierHeartRate',
+    quantity: 152,
+    unit: 'count/min',
+    startDate: new Date('2024-03-01T08:15:00'),
+    endDate: new Date('2024-03-01T08:15:00'),
+  },
+  {
+    quantityType: 'HKQuantityTypeIdentifierHeartRate',
+    quantity: 138,
+    unit: 'count/min',
+    startDate: new Date('2024-03-01T08:25:00'),
+    endDate: new Date('2024-03-01T08:25:00'),
+  },
+]
+
+// Save a running workout
+const workout = await saveWorkoutSample(
+  WorkoutActivityType.running,
+  heartRateSamples,
+  startDate,
+  endDate,
+  {
+    distance: 5000, // 5 km in meters
+    energyBurned: 350, // 350 kcal
+  },
+  {
+    HKMetadataKeyIndoorWorkout: false,
+    HKMetadataKeyAverageSpeed: 2.78, // m/s (10 km/h)
+    HKMetadataKeyElevationAscended: 50, // meters
+  }
+)
+
+console.log('Workout saved:', {
+  uuid: workout.uuid,
+  duration: workout.duration,
+  distance: workout.totalDistance,
+})
+
+// You can also save a workout route after saving the workout
+const locations = [
+  {
+    latitude: 37.7749,
+    longitude: -122.4194,
+    altitude: 10,
+    course: 0,
+    speed: 2.5,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    date: new Date('2024-03-01T08:00:00'),
+  },
+  // ... more locations
+]
+
+await workout.saveWorkoutRoute(locations)
+```
+
+<Warning>
+  You must request write authorization for `HKWorkoutTypeIdentifier` and any quantity types you want to save before calling this function.
+</Warning>
+
+<Tip>
+  To add a GPS route to your workout, use the `saveWorkoutRoute` method on the returned WorkoutProxy object. See [Workout Routes](/api/workouts/routes) for more details.
+</Tip>

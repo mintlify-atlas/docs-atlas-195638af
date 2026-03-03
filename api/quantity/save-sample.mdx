@@ -1,0 +1,219 @@
+---
+title: 'Save Quantity Sample'
+description: 'Save quantity samples to HealthKit'
+---
+
+## saveQuantitySample
+
+Save a new quantity sample to HealthKit.
+
+```typescript
+saveQuantitySample(
+  identifier: QuantityTypeIdentifierWriteable,
+  unit: string,
+  value: number,
+  start: Date,
+  end: Date,
+  metadata?: AnyMap
+): Promise<QuantitySample | undefined>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifierWriteable" required>
+  The quantity type identifier to save. Must be a writeable type (read-only types like `'HKQuantityTypeIdentifierAppleExerciseTime'` cannot be written to)
+</ParamField>
+
+<ParamField path="unit" type="string" required>
+  The unit of measurement for the quantity value (e.g., `'count'`, `'kg'`, `'mi'`, `'IU'`)
+</ParamField>
+
+<ParamField path="value" type="number" required>
+  The numeric value of the quantity
+</ParamField>
+
+<ParamField path="start" type="Date" required>
+  The start date and time for the sample
+</ParamField>
+
+<ParamField path="end" type="Date" required>
+  The end date and time for the sample. For instantaneous measurements (like weight), this should typically be the same as the start date
+</ParamField>
+
+<ParamField path="metadata" type="AnyMap">
+  Optional metadata to attach to the sample. Can include both built-in HealthKit metadata keys and custom app-specific data
+  
+  <Expandable title="Common metadata keys">
+    <ParamField path="HKInsulinDeliveryReason" type="InsulinDeliveryReason">
+      For insulin delivery samples. Values: `InsulinDeliveryReason.basal` or `InsulinDeliveryReason.bolus`
+    </ParamField>
+    
+    <ParamField path="HKBloodGlucoseMealTime" type="number">
+      Indicates when a blood glucose measurement was taken relative to a meal
+    </ParamField>
+    
+    <ParamField path="HKWasUserEntered" type="boolean">
+      Whether the data was manually entered by the user
+    </ParamField>
+    
+    <ParamField path="HKExternalUUID" type="string">
+      A unique identifier from an external system
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="sample" type="QuantitySample | undefined">
+  The saved quantity sample, or undefined if the save failed
+  
+  <Expandable title="QuantitySample properties">
+    <ResponseField name="uuid" type="string">
+      HealthKit's unique identifier for the sample
+    </ResponseField>
+    
+    <ResponseField name="quantityType" type="QuantityTypeIdentifier">
+      The type of quantity data
+    </ResponseField>
+    
+    <ResponseField name="quantity" type="number">
+      The quantity value that was saved
+    </ResponseField>
+    
+    <ResponseField name="unit" type="string">
+      The unit of measurement
+    </ResponseField>
+    
+    <ResponseField name="startDate" type="Date">
+      When the sample started
+    </ResponseField>
+    
+    <ResponseField name="endDate" type="Date">
+      When the sample ended
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="AnyMap">
+      The metadata that was saved with the sample
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+#### Save step count
+
+```typescript
+import { saveQuantitySample } from '@kingstinct/react-native-healthkit'
+
+const stepSample = await saveQuantitySample(
+  'HKQuantityTypeIdentifierStepCount',
+  'count',
+  1000,
+  new Date('2024-03-15T10:00:00'),
+  new Date('2024-03-15T11:00:00')
+)
+
+if (stepSample) {
+  console.log(`Saved ${stepSample.quantity} steps`)
+}
+```
+
+#### Save weight measurement
+
+```typescript
+import { saveQuantitySample } from '@kingstinct/react-native-healthkit'
+
+const now = new Date()
+const weightSample = await saveQuantitySample(
+  'HKQuantityTypeIdentifierBodyMass',
+  'kg',
+  70.5,
+  now,
+  now, // Same as start for instantaneous measurements
+  {
+    HKWasUserEntered: true
+  }
+)
+```
+
+#### Save insulin delivery with metadata
+
+```typescript
+import { 
+  saveQuantitySample, 
+  InsulinDeliveryReason 
+} from '@kingstinct/react-native-healthkit'
+
+const insulinSample = await saveQuantitySample(
+  'HKQuantityTypeIdentifierInsulinDelivery',
+  'IU',
+  5.5,
+  new Date(),
+  new Date(),
+  {
+    HKInsulinDeliveryReason: InsulinDeliveryReason.bolus,
+    notes: 'Pre-meal insulin'
+  }
+)
+```
+
+#### Save blood glucose with meal context
+
+```typescript
+import { saveQuantitySample } from '@kingstinct/react-native-healthkit'
+
+const glucoseSample = await saveQuantitySample(
+  'HKQuantityTypeIdentifierBloodGlucose',
+  'mg/dL',
+  120,
+  new Date(),
+  new Date(),
+  {
+    HKBloodGlucoseMealTime: 1, // Preprandial (before meal)
+    HKWasUserEntered: true
+  }
+)
+```
+
+<Warning>
+  Make sure you've requested write permission for the quantity type using `requestAuthorization` before calling `saveQuantitySample`, or the app will crash.
+</Warning>
+
+<Note>
+  Some quantity types are read-only (like `HKQuantityTypeIdentifierAppleExerciseTime`) and cannot be saved by third-party apps. These are defined as `QuantityTypeIdentifierReadOnly` in the type system.
+</Note>
+
+## Metadata Keys
+
+HealthKit metadata keys follow a specific naming pattern. In the Apple documentation, they appear with the `HKMetadataKey` prefix (e.g., `HKMetadataKeyExternalUUID`), but when serialized, they use the `HK` prefix (e.g., `HKExternalUUID`).
+
+Common metadata keys include:
+
+- `HKExternalUUID` - Unique identifier from external system
+- `HKWasUserEntered` - Boolean indicating manual entry
+- `HKInsulinDeliveryReason` - Reason for insulin delivery (basal/bolus)
+- `HKBloodGlucoseMealTime` - Timing relative to meals
+- `HKHeartRateMotionContext` - Motion context for heart rate
+
+You can also use custom string keys for app-specific metadata.
+
+## Unit Compatibility
+
+Use the `isQuantityCompatibleWithUnit()` helper function to check if a unit is compatible with a quantity type before saving:
+
+```typescript
+import { isQuantityCompatibleWithUnit } from '@kingstinct/react-native-healthkit'
+
+const isCompatible = isQuantityCompatibleWithUnit(
+  'HKQuantityTypeIdentifierBodyMass',
+  'kg'
+)
+
+if (isCompatible) {
+  await saveQuantitySample(
+    'HKQuantityTypeIdentifierBodyMass',
+    'kg',
+    70.5,
+    new Date(),
+    new Date()
+  )
+}
+```

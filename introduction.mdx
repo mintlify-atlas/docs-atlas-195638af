@@ -1,0 +1,69 @@
+---
+title: React Native HealthKit
+description: TypeScript-first React Native bindings for Apple HealthKit with full type safety and Promise support
+---
+
+React Native bindings for HealthKit with full TypeScript and Promise support covering about any kind of data. Keeping TypeScript mappings as close as possible to HealthKit - both in regards to naming and serialization.
+
+<Note>
+  This library is iOS-only and requires a physical device or simulator running iOS. HealthKit is not available on Android. For Android alternatives, see [react-native-health-connect](https://github.com/matinzd/react-native-health-connect/).
+</Note>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Full TypeScript support" icon="code">
+    Type-safe mappings to HealthKit APIs with complete IDE autocomplete
+  </Card>
+  <Card title="100+ quantity types" icon="heart-pulse">
+    Steps, energy burnt, blood glucose, heart rate, and more
+  </Card>
+  <Card title="React Hooks" icon="react">
+    Declarative data fetching and subscriptions with hooks
+  </Card>
+  <Card title="HealthKit anchor queries" icon="anchor">
+    Efficient data synchronization with change tracking
+  </Card>
+  <Card title="Background delivery" icon="bell">
+    Real-time change notifications and background updates
+  </Card>
+  <Card title="Workouts & correlations" icon="dumbbell">
+    Support for 75+ workout types, electrocardiograms, and clinical data
+  </Card>
+</CardGroup>
+
+## Supported data types
+
+| Data Types                  | Query | Save  | Subscribe | Examples                               |
+| ----------------------------|:------|:------|:----------|:---------------------------------------|
+| 100+ Quantity Types         | ✅    | ✅    | ✅       | Steps, energy burnt, blood glucose etc.. |
+| 63 Category Types           | ✅    | ✅    | ✅       | Sleep analysis, mindful sessions etc.. |
+| 75+ Workout Activity Types  | ✅    | ✅    | ✅       | Swimming, running, table tennis etc..  |
+| Correlation Types           | ✅    | ✅    | ✅       | Food and blood pressure                |
+| Document Types              | ✅    | ❌    | ✅       | CDA documents exposed as Base64 data  |
+| Clinical Records            | ⚠️    | ❌    | ⚠️       | Lab results in FHIR JSON format  |
+
+## Quick navigation
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started with Expo or bare React Native setup
+  </Card>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Build your first HealthKit integration in minutes
+  </Card>
+  <Card title="Authorization" icon="lock" href="/core-concepts/authorization">
+    Learn how to request and manage HealthKit permissions
+  </Card>
+  <Card title="Data Types" icon="database" href="/core-concepts/data-types">
+    Explore quantity types, category types, and more
+  </Card>
+</CardGroup>
+
+## Performance
+
+Built on [react-native-nitro-modules](https://nitro.margelo.com/) for optimal performance with direct Swift-to-JavaScript bindings.
+
+## Disclaimer
+
+This library is provided as-is without any warranty and is not affiliated with Apple in any way. The data might be incomplete or inaccurate.

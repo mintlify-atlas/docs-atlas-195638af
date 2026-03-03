@@ -1,0 +1,198 @@
+---
+title: Authorization
+description: Request and manage HealthKit authorization permissions
+icon: lock
+---
+
+HealthKit requires explicit user authorization before your app can read or write health data. The authorization API provides functions to request permissions and check authorization status.
+
+## Request authorization
+
+### requestAuthorization
+
+Request authorization to read and/or write specific data types.
+
+```typescript
+function requestAuthorization(
+  toRequest: AuthDataTypes
+): Promise<boolean>
+```
+
+<ParamField path="toRequest" type="AuthDataTypes" required>
+  Authorization request specifying data types to read and/or write
+  
+  <Expandable title="AuthDataTypes properties">
+    <ParamField path="toShare" type="SampleTypeIdentifierWriteable[]">
+      Array of data types your app wants to write to HealthKit
+    </ParamField>
+    
+    <ParamField path="toRead" type="ObjectTypeIdentifier[]">
+      Array of data types your app wants to read from HealthKit
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+**Returns:** `Promise<boolean>` - Resolves to `true` if authorization was successful
+
+#### Example: Request read permissions
+
+```typescript
+import { requestAuthorization } from '@kingstinct/react-native-healthkit';
+
+const success = await requestAuthorization({
+  toRead: [
+    'HKQuantityTypeIdentifierStepCount',
+    'HKQuantityTypeIdentifierHeartRate',
+    'HKCategoryTypeIdentifierSleepAnalysis',
+  ],
+});
+
+if (success) {
+  console.log('Authorization granted');
+}
+```
+
+#### Example: Request read and write permissions
+
+```typescript
+await requestAuthorization({
+  toRead: [
+    'HKQuantityTypeIdentifierBloodGlucose',
+    'HKQuantityTypeIdentifierInsulinDelivery',
+  ],
+  toShare: [
+    'HKQuantityTypeIdentifierInsulinDelivery',
+    'HKQuantityTypeIdentifierBloodGlucose',
+  ],
+});
+```
+
+<Warning>
+  Always request authorization before attempting to read or write data. Failing
+  to do so will cause your app to crash.
+</Warning>
+
+## Check authorization status
+
+### authorizationStatusFor
+
+Get the current authorization status for a specific data type.
+
+```typescript
+function authorizationStatusFor(
+  type: ObjectTypeIdentifier
+): AuthorizationStatus
+```
+
+<ParamField path="type" type="ObjectTypeIdentifier" required>
+  The HealthKit data type to check authorization for
+</ParamField>
+
+**Returns:** `AuthorizationStatus` - One of:
+- `AuthorizationStatus.notDetermined` - User hasn't been asked yet
+- `AuthorizationStatus.sharingDenied` - User denied access
+- `AuthorizationStatus.sharingAuthorized` - User granted access
+
+```typescript
+import { authorizationStatusFor, AuthorizationStatus } from '@kingstinct/react-native-healthkit';
+
+const status = authorizationStatusFor('HKQuantityTypeIdentifierStepCount');
+
+if (status === AuthorizationStatus.notDetermined) {
+  // Request authorization
+  await requestAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount'],
+  });
+}
+```
+
+<Note>
+  For privacy reasons, you cannot distinguish between the user denying
+  permission and no data being available. Read authorization status will always
+  return `notDetermined` or `sharingAuthorized`.
+</Note>
+
+### getRequestStatusForAuthorization
+
+Check if authorization has already been requested for specific data types.
+
+```typescript
+function getRequestStatusForAuthorization(
+  toCheck: AuthDataTypes
+): Promise<AuthorizationRequestStatus>
+```
+
+**Returns:** `Promise<AuthorizationRequestStatus>` - One of:
+- `AuthorizationRequestStatus.unnecessary` - Already authorized
+- `AuthorizationRequestStatus.shouldRequest` - Should request authorization
+- `AuthorizationRequestStatus.unknown` - Status unknown
+
+```typescript
+import { getRequestStatusForAuthorization } from '@kingstinct/react-native-healthkit';
+
+const status = await getRequestStatusForAuthorization({
+  toRead: ['HKQuantityTypeIdentifierStepCount'],
+  toShare: ['HKQuantityTypeIdentifierBodyMass'],
+});
+
+if (status === 'shouldRequest') {
+  await requestAuthorization({
+    toRead: ['HKQuantityTypeIdentifierStepCount'],
+    toShare: ['HKQuantityTypeIdentifierBodyMass'],
+  });
+}
+```
+
+## Per-object authorization
+
+### requestPerObjectReadAuthorization
+
+For sensitive data types, request authorization on a per-object basis.
+
+```typescript
+function requestPerObjectReadAuthorization(
+  typeIdentifier: PerObjectTypeIdentifier
+): Promise<void>
+```
+
+<ParamField path="typeIdentifier" type="PerObjectTypeIdentifier" required>
+  The sensitive data type requiring per-object authorization
+</ParamField>
+
+Available for:
+- Clinical records
+- Sensitive medical data
+
+```typescript
+import { requestPerObjectReadAuthorization } from '@kingstinct/react-native-healthkit';
+
+await requestPerObjectReadAuthorization(
+  'HKClinicalTypeIdentifierLabResults'
+);
+```
+
+<Info>
+  Per-object authorization is required for clinical records and other sensitive
+  data types. The user will be prompted to approve access to individual records.
+</Info>
+
+## React Hook
+
+For declarative authorization management, use the `useHealthkitAuthorization` hook:
+
+```typescript
+import { useHealthkitAuthorization } from '@kingstinct/react-native-healthkit';
+
+const [authorizationStatus, requestAuth] = useHealthkitAuthorization([
+  'HKQuantityTypeIdentifierStepCount',
+  'HKQuantityTypeIdentifierHeartRate',
+]);
+```
+
+See [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) for details.
+
+## Related APIs
+
+- [useHealthkitAuthorization hook](/api/hooks/use-healthkit-authorization)
+- [Check availability](/api/core/availability)
+- [Authorization guide](/core-concepts/authorization)

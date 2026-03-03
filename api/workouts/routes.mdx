@@ -1,0 +1,242 @@
+---
+title: "Workout Routes"
+description: "Access and save GPS routes for workout samples"
+---
+
+## Overview
+
+Workout routes allow you to attach GPS location data to workouts. The `WorkoutProxy` object provides methods to retrieve existing routes and save new ones.
+
+## getWorkoutRoutes
+
+Retrieve all GPS routes associated with a workout.
+
+### Signature
+
+```typescript
+workoutProxy.getWorkoutRoutes(): Promise<readonly WorkoutRoute[]>
+```
+
+### Returns
+
+<ResponseField name="routes" type="Promise<WorkoutRoute[]>">
+  Array of workout routes, each containing location data
+  
+  <Expandable title="WorkoutRoute properties">
+    <ResponseField name="locations" type="WorkoutRouteLocation[]">
+      Array of location points along the route
+      
+      <Expandable title="WorkoutRouteLocation properties">
+        <ResponseField name="latitude" type="number">
+          Latitude in degrees
+        </ResponseField>
+        
+        <ResponseField name="longitude" type="number">
+          Longitude in degrees
+        </ResponseField>
+        
+        <ResponseField name="altitude" type="number">
+          Altitude in meters
+        </ResponseField>
+        
+        <ResponseField name="date" type="Date">
+          Timestamp of this location
+        </ResponseField>
+        
+        <ResponseField name="speed" type="number">
+          Speed in meters per second
+        </ResponseField>
+        
+        <ResponseField name="course" type="number">
+          Direction of travel in degrees (0-360)
+        </ResponseField>
+        
+        <ResponseField name="horizontalAccuracy" type="number">
+          Horizontal accuracy in meters
+        </ResponseField>
+        
+        <ResponseField name="verticalAccuracy" type="number">
+          Vertical accuracy in meters
+        </ResponseField>
+        
+        <ResponseField name="speedAccuracy" type="number">
+          Speed accuracy in meters per second
+        </ResponseField>
+        
+        <ResponseField name="distance" type="number">
+          Distance traveled since previous point in meters (optional)
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="HKMetadataKeySyncIdentifier" type="string">
+      Sync identifier from metadata (optional)
+    </ResponseField>
+    
+    <ResponseField name="HKMetadataKeySyncVersion" type="number">
+      Sync version from metadata (optional)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```typescript
+import { queryWorkoutSamples, WorkoutActivityType } from '@kingstinct/react-native-healthkit'
+
+// Get a recent running workout
+const workouts = await queryWorkoutSamples({
+  filter: {
+    workoutActivityType: WorkoutActivityType.running,
+  },
+  limit: 1,
+  ascending: false,
+})
+
+if (workouts.length > 0) {
+  const workout = workouts[0]
+  const routes = await workout.getWorkoutRoutes()
+  
+  console.log(`Found ${routes.length} routes for workout`)
+  
+  for (const route of routes) {
+    console.log(`Route with ${route.locations.length} locations`)
+    
+    // Access location data
+    for (const location of route.locations) {
+      console.log(`Location: ${location.latitude}, ${location.longitude}`, {
+        altitude: location.altitude,
+        speed: location.speed,
+        accuracy: location.horizontalAccuracy,
+        timestamp: location.date,
+      })
+    }
+  }
+}
+```
+
+---
+
+## saveWorkoutRoute
+
+Save a GPS route for a workout. This associates location data with the workout sample.
+
+### Signature
+
+```typescript
+workoutProxy.saveWorkoutRoute(
+  locations: readonly LocationForSaving[]
+): Promise<boolean>
+```
+
+### Parameters
+
+<ParamField path="locations" type="LocationForSaving[]" required>
+  Array of location points to save. Each location should have a timestamp within the workout's time range.
+  
+  <Expandable title="LocationForSaving properties">
+    <ParamField path="latitude" type="number" required>
+      Latitude in degrees
+    </ParamField>
+    
+    <ParamField path="longitude" type="number" required>
+      Longitude in degrees
+    </ParamField>
+    
+    <ParamField path="altitude" type="number" required>
+      Altitude in meters
+    </ParamField>
+    
+    <ParamField path="date" type="Date" required>
+      Timestamp of this location point
+    </ParamField>
+    
+    <ParamField path="speed" type="number" required>
+      Speed in meters per second
+    </ParamField>
+    
+    <ParamField path="course" type="number" required>
+      Direction of travel in degrees (0-360)
+    </ParamField>
+    
+    <ParamField path="horizontalAccuracy" type="number" required>
+      Horizontal accuracy in meters
+    </ParamField>
+    
+    <ParamField path="verticalAccuracy" type="number" required>
+      Vertical accuracy in meters
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="success" type="Promise<boolean>">
+  Returns true if the route was successfully saved
+</ResponseField>
+
+### Example
+
+```typescript
+import { saveWorkoutSample, WorkoutActivityType } from '@kingstinct/react-native-healthkit'
+import * as Location from 'expo-location'
+
+// Start tracking location during workout
+const locations: LocationForSaving[] = []
+const startDate = new Date()
+
+// Record locations during workout (example using expo-location)
+const locationSubscription = await Location.watchPositionAsync(
+  {
+    accuracy: Location.Accuracy.BestForNavigation,
+    distanceInterval: 10, // meters
+  },
+  (location) => {
+    locations.push({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      altitude: location.coords.altitude ?? 0,
+      date: new Date(location.timestamp),
+      speed: location.coords.speed ?? 0,
+      course: location.coords.heading ?? 0,
+      horizontalAccuracy: location.coords.accuracy ?? 0,
+      verticalAccuracy: location.coords.altitudeAccuracy ?? 0,
+    })
+  }
+)
+
+// ... workout happens ...
+
+// End workout
+const endDate = new Date()
+locationSubscription.remove()
+
+// Save workout
+const workout = await saveWorkoutSample(
+  WorkoutActivityType.running,
+  [], // quantity samples
+  startDate,
+  endDate,
+  {
+    distance: 5000,
+    energyBurned: 350,
+  }
+)
+
+// Save the route
+const routeSaved = await workout.saveWorkoutRoute(locations)
+
+if (routeSaved) {
+  console.log(`Route saved with ${locations.length} locations`)
+} else {
+  console.error('Failed to save route')
+}
+```
+
+<Warning>
+  You must request write authorization for `HKWorkoutRouteTypeIdentifier` before saving workout routes.
+</Warning>
+
+<Tip>
+  Location points should be ordered chronologically and fall within the workout's start and end dates for accurate route representation.
+</Tip>

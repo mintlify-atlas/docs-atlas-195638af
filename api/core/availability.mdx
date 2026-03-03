@@ -1,0 +1,130 @@
+---
+title: Availability
+description: Check if HealthKit is available on the current device
+icon: mobile
+---
+
+Before using HealthKit APIs, you should check if HealthKit is available on the device. HealthKit is available on iPhone and Apple Watch, but not on iPad or Mac.
+
+## Check availability
+
+### isHealthDataAvailable
+
+Synchronously check if HealthKit is available.
+
+```typescript
+function isHealthDataAvailable(): boolean
+```
+
+**Returns:** `boolean` - `true` if HealthKit is available, `false` otherwise
+
+```typescript
+import { isHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+
+const isAvailable = isHealthDataAvailable();
+
+if (isAvailable) {
+  // Safe to use HealthKit APIs
+  await requestAuthorization({ toRead: ['HKQuantityTypeIdentifierStepCount'] });
+} else {
+  console.log('HealthKit is not available on this device');
+}
+```
+
+### isHealthDataAvailableAsync
+
+Asynchronously check if HealthKit is available.
+
+```typescript
+function isHealthDataAvailableAsync(): Promise<boolean>
+```
+
+**Returns:** `Promise<boolean>` - Resolves to `true` if available
+
+```typescript
+const isAvailable = await isHealthDataAvailableAsync();
+```
+
+<Tip>
+  Use the synchronous version (`isHealthDataAvailable`) in most cases. The
+  async version is provided for consistency with other HealthKit APIs.
+</Tip>
+
+## Platform behavior
+
+<Warning>
+  React Native HealthKit is iOS-only. On Android and other platforms, these
+  functions will return `false` and log a warning.
+</Warning>
+
+The library handles platform detection automatically:
+
+```typescript
+import { Platform } from 'react-native';
+import { isHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+
+if (Platform.OS === 'ios' && isHealthDataAvailable()) {
+  // HealthKit is available
+}
+```
+
+## Device availability
+
+HealthKit is available on:
+- ✅ iPhone (iOS 8+)
+- ✅ Apple Watch (watchOS 2+)
+- ❌ iPad
+- ❌ Mac
+- ❌ iPod touch (most models)
+
+## Check specific data type availability
+
+Some data types are only available on certain iOS versions. Use the Core module to check:
+
+```typescript
+import { Core } from '@kingstinct/react-native-healthkit';
+
+// Check if a specific data type is available
+const isStepsAvailable = Core.isObjectTypeAvailable(
+  'HKQuantityTypeIdentifierStepCount'
+);
+
+// Check multiple data types at once
+const availability = Core.areObjectTypesAvailable([
+  'HKQuantityTypeIdentifierStepCount',
+  'HKQuantityTypeIdentifierCyclingCadence', // iOS 17+
+  'HKQuantityTypeIdentifierTimeInDaylight', // iOS 17+
+]);
+
+console.log(availability);
+// {
+//   HKQuantityTypeIdentifierStepCount: true,
+//   HKQuantityTypeIdentifierCyclingCadence: true,
+//   HKQuantityTypeIdentifierTimeInDaylight: true,
+// }
+```
+
+## React Hook
+
+For declarative availability checking, use the `useIsHealthDataAvailable` hook:
+
+```typescript
+import { useIsHealthDataAvailable } from '@kingstinct/react-native-healthkit';
+
+function MyComponent() {
+  const isAvailable = useIsHealthDataAvailable();
+
+  if (!isAvailable) {
+    return <Text>HealthKit is not available on this device</Text>;
+  }
+
+  return <HealthKitData />;
+}
+```
+
+See [useIsHealthDataAvailable](/api/hooks/use-is-health-data-available) for details.
+
+## Related APIs
+
+- [useIsHealthDataAvailable hook](/api/hooks/use-is-health-data-available)
+- [Request authorization](/api/core/authorization)

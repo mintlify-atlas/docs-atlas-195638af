@@ -1,0 +1,363 @@
+---
+title: 'useMostRecentWorkout'
+description: 'React hook to fetch and subscribe to the most recent workout'
+---
+
+## Overview
+
+The `useMostRecentWorkout` hook fetches the most recent workout sample from HealthKit and automatically subscribes to updates. When a new workout is saved, the component will re-render with the latest workout data.
+
+## Usage
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+
+const workout = useMostRecentWorkout();
+```
+
+## Parameters
+
+This hook takes no parameters.
+
+## Return Value
+
+<ResponseField name="workout" type="WorkoutProxy | undefined">
+  The most recent workout, or `undefined` if no workout data is available yet.
+  
+  The `WorkoutProxy` is a special object that includes both workout data and methods to access related information.
+</ResponseField>
+
+## Workout Properties
+
+```typescript
+interface WorkoutProxy {
+  readonly uuid: string;
+  readonly workoutActivityType: WorkoutActivityType;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly duration: number; // seconds
+  readonly totalDistance?: number;
+  readonly totalEnergyBurned?: number;
+  readonly totalFlightsClimbed?: number;
+  readonly totalSwimmingStrokeCount?: number;
+  readonly metadata?: Record<string, unknown>;
+  
+  // Methods
+  getWorkoutRoutes(): Promise<WorkoutRoute[]>;
+  // ... other methods
+}
+```
+
+## Example: Display Last Workout
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function LastWorkout() {
+  const workout = useMostRecentWorkout();
+
+  if (!workout) {
+    return <Text>Loading workout data...</Text>;
+  }
+
+  const durationMinutes = Math.round(workout.duration / 60);
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+        {workout.workoutActivityType}
+      </Text>
+      <Text style={{ fontSize: 18, marginTop: 10 }}>
+        Duration: {durationMinutes} minutes
+      </Text>
+      {workout.totalDistance && (
+        <Text>Distance: {workout.totalDistance.toFixed(2)} m</Text>
+      )}
+      {workout.totalEnergyBurned && (
+        <Text>Calories: {workout.totalEnergyBurned.toFixed(0)} kcal</Text>
+      )}
+      <Text style={{ color: 'gray', marginTop: 10 }}>
+        {workout.endDate.toLocaleString()}
+      </Text>
+    </View>
+  );
+}
+```
+
+## Example: Workout Card with Details
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+import { View, Text, StyleSheet } from 'react-native';
+
+function WorkoutCard() {
+  const workout = useMostRecentWorkout();
+
+  if (!workout) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.noData}>No workouts recorded</Text>
+      </View>
+    );
+  }
+
+  const duration = new Date(workout.duration * 1000).toISOString().substr(11, 8);
+  const distanceKm = workout.totalDistance 
+    ? (workout.totalDistance / 1000).toFixed(2) 
+    : null;
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Text style={styles.activityType}>
+          {workout.workoutActivityType.replace('HKWorkoutActivityType', '')}
+        </Text>
+        <Text style={styles.date}>
+          {workout.endDate.toLocaleDateString()}
+        </Text>
+      </View>
+      
+      <View style={styles.stats}>
+        <View style={styles.stat}>
+          <Text style={styles.statLabel}>Duration</Text>
+          <Text style={styles.statValue}>{duration}</Text>
+        </View>
+        
+        {distanceKm && (
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Distance</Text>
+            <Text style={styles.statValue}>{distanceKm} km</Text>
+          </View>
+        )}
+        
+        {workout.totalEnergyBurned && (
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Calories</Text>
+            <Text style={styles.statValue}>
+              {workout.totalEnergyBurned.toFixed(0)}
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  activityType: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  date: {
+    fontSize: 14,
+    color: '#666',
+  },
+  stats: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  stat: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  noData: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
+});
+```
+
+## Example: With Workout Routes
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+import { useEffect, useState } from 'react';
+import { View, Text, Button } from 'react-native';
+
+function WorkoutWithRoute() {
+  const workout = useMostRecentWorkout();
+  const [routes, setRoutes] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadRoutes = async () => {
+    if (!workout) return;
+    
+    setLoading(true);
+    try {
+      const workoutRoutes = await workout.getWorkoutRoutes();
+      setRoutes(workoutRoutes);
+    } catch (error) {
+      console.error('Failed to load routes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!workout) {
+    return <Text>No workout data</Text>;
+  }
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
+        {workout.workoutActivityType}
+      </Text>
+      <Text>Duration: {Math.round(workout.duration / 60)} min</Text>
+      
+      <Button 
+        title={loading ? "Loading..." : "Load Route"}
+        onPress={loadRoutes}
+        disabled={loading}
+      />
+      
+      {routes.length > 0 && (
+        <View style={{ marginTop: 10 }}>
+          <Text>Found {routes.length} route(s)</Text>
+          {/* Render route data or map */}
+        </View>
+      )}
+    </View>
+  );
+}
+```
+
+## Example: Workout Summary List
+
+```typescript
+import { useMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+import { View, Text } from 'react-native';
+
+function WorkoutSummary() {
+  const workout = useMostRecentWorkout();
+
+  if (!workout) {
+    return null;
+  }
+
+  const items = [
+    { label: 'Type', value: workout.workoutActivityType },
+    { label: 'Date', value: workout.startDate.toLocaleDateString() },
+    { label: 'Time', value: workout.startDate.toLocaleTimeString() },
+    { 
+      label: 'Duration', 
+      value: `${Math.floor(workout.duration / 60)}m ${Math.round(workout.duration % 60)}s` 
+    },
+  ];
+
+  if (workout.totalDistance) {
+    items.push({
+      label: 'Distance',
+      value: `${(workout.totalDistance / 1000).toFixed(2)} km`
+    });
+  }
+
+  if (workout.totalEnergyBurned) {
+    items.push({
+      label: 'Energy',
+      value: `${workout.totalEnergyBurned.toFixed(0)} kcal`
+    });
+  }
+
+  if (workout.totalFlightsClimbed) {
+    items.push({
+      label: 'Flights',
+      value: workout.totalFlightsClimbed.toString()
+    });
+  }
+
+  return (
+    <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 8 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+        Last Workout
+      </Text>
+      {items.map((item, index) => (
+        <View 
+          key={index} 
+          style={{ 
+            flexDirection: 'row', 
+            justifyContent: 'space-between',
+            paddingVertical: 8,
+            borderBottomWidth: index < items.length - 1 ? 1 : 0,
+            borderBottomColor: '#e0e0e0'
+          }}
+        >
+          <Text style={{ color: '#666' }}>{item.label}</Text>
+          <Text style={{ fontWeight: '500' }}>{item.value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+```
+
+## Auto-Updates
+
+The hook automatically subscribes to workout changes. When a new workout is saved, the component re-renders with the latest workout.
+
+## Important Notes
+
+<Warning>
+**Request authorization before using this hook.** Your app will crash if you haven't requested read authorization for workouts.
+</Warning>
+
+```typescript
+import { 
+  useHealthkitAuthorization,
+  useMostRecentWorkout 
+} from '@kingstinct/react-native-healthkit';
+
+function WorkoutApp() {
+  const [authStatus] = useHealthkitAuthorization({
+    toRead: ['HKWorkoutTypeIdentifier']
+  });
+
+  const workout = authStatus === 'unnecessary' 
+    ? useMostRecentWorkout()
+    : undefined;
+
+  // ...
+}
+```
+
+## Common Workout Activity Types
+
+- `HKWorkoutActivityTypeRunning`
+- `HKWorkoutActivityTypeWalking`
+- `HKWorkoutActivityTypeCycling`
+- `HKWorkoutActivityTypeSwimming`
+- `HKWorkoutActivityTypeYoga`
+- `HKWorkoutActivityTypeFunctionalStrengthTraining`
+- And 70+ more types...
+
+## See Also
+
+- [getMostRecentWorkout](/api/workout/get-most-recent-workout) - Imperative API
+- [queryWorkoutSamples](/api/workout/query-workout-samples) - Query multiple workouts
+- [saveWorkoutSample](/api/workout/save-workout-sample) - Save workouts
+- [useHealthkitAuthorization](/api/hooks/use-healthkit-authorization) - Request authorization
