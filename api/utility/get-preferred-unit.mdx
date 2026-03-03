@@ -1,0 +1,154 @@
+---
+title: getPreferredUnit
+description: Get the user's preferred unit for a single quantity type
+icon: ruler
+---
+
+Convenience function to retrieve the user's preferred unit for a single quantity type identifier.
+
+## Function signature
+
+```typescript
+function getPreferredUnit(
+  quantityType: QuantityTypeIdentifier
+): Promise<string>
+```
+
+<ParamField path="quantityType" type="QuantityTypeIdentifier" required>
+  The quantity type identifier to get the preferred unit for
+</ParamField>
+
+**Returns:** `Promise<string>` - The preferred unit string (e.g., `"kg"`, `"lb"`, `"cm"`, `"in"`)
+
+**Throws:** Error if no preferred unit is found for the quantity type
+
+## Usage
+
+### Get preferred unit for weight
+
+```typescript
+import { getPreferredUnit } from '@kingstinct/react-native-healthkit';
+
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+console.log(unit); // "kg" or "lb" depending on user's region
+```
+
+### Query with preferred unit
+
+```typescript
+import {
+  getPreferredUnit,
+  queryQuantitySamples,
+} from '@kingstinct/react-native-healthkit';
+
+// Get preferred unit first
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierHeight');
+
+// Query with that unit
+const { samples } = await queryQuantitySamples(
+  'HKQuantityTypeIdentifierHeight',
+  {
+    unit,
+    limit: 1,
+  }
+);
+
+console.log(`Height: ${samples[0]?.quantity} ${samples[0]?.unit}`);
+```
+
+### Display with proper units
+
+```typescript
+import { getPreferredUnit, getMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+function DisplayWeight() {
+  const [weight, setWeight] = useState<string>('');
+
+  useEffect(() => {
+    async function fetchWeight() {
+      const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+      const sample = await getMostRecentQuantitySample(
+        'HKQuantityTypeIdentifierBodyMass',
+        unit
+      );
+      
+      if (sample) {
+        setWeight(`${sample.quantity} ${sample.unit}`);
+      }
+    }
+    
+    fetchWeight();
+  }, []);
+
+  return <Text>Weight: {weight}</Text>;
+}
+```
+
+## Comparison with getPreferredUnits
+
+`getPreferredUnit` is a convenience wrapper around `getPreferredUnits` for single identifiers:
+
+```typescript
+// Using getPreferredUnit (simpler for single type)
+const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+
+// Equivalent using getPreferredUnits
+const units = await getPreferredUnits(['HKQuantityTypeIdentifierBodyMass']);
+const unit = units[0]?.unit;
+```
+
+<Tip>
+  Use `getPreferredUnit` for single types. Use `getPreferredUnits` when you
+  need units for multiple types at once (more efficient).
+</Tip>
+
+## Best practices
+
+1. **Cache the result** - Preferred units rarely change during app lifetime
+2. **Fetch at app start** - Get preferred units during initialization
+3. **Always respect preferences** - Never hardcode units for display
+4. **Handle errors** - Some types may not have preferred units
+
+```typescript
+// ✅ Good: Cache and handle errors
+let cachedUnit: string | null = null;
+
+async function getWeightUnit(): Promise<string> {
+  if (!cachedUnit) {
+    try {
+      cachedUnit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+    } catch (error) {
+      console.warn('No preferred unit, using default');
+      cachedUnit = 'kg';
+    }
+  }
+  return cachedUnit;
+}
+
+// ❌ Bad: Fetch repeatedly without caching
+async function fetchWeight() {
+  const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+  // ... fetch weight
+}
+```
+
+## Error handling
+
+The function throws an error if no preferred unit is found:
+
+```typescript
+try {
+  const unit = await getPreferredUnit('HKQuantityTypeIdentifierBodyMass');
+  console.log(unit);
+} catch (error) {
+  console.error('Failed to get preferred unit:', error);
+  // Fallback to default unit
+  const defaultUnit = 'kg';
+}
+```
+
+## Related APIs
+
+- [getPreferredUnits](/api/core/preferred-units) - Get units for multiple types
+- [Units guide](/core-concepts/units)
+- [Units reference](/api/types/units)

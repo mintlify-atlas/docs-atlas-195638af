@@ -133,7 +133,16 @@
               "api/hooks/use-most-recent-workout",
               "api/hooks/use-statistics-for-quantity",
               "api/hooks/use-subscribe-to-changes",
+              "api/hooks/use-subscribe-to-quantity-samples",
+              "api/hooks/use-subscribe-to-category-samples",
               "api/hooks/use-sources"
+            ]
+          },
+          {
+            "group": "Utility Functions",
+            "pages": [
+              "api/utility/get-most-recent-samples",
+              "api/utility/get-preferred-unit"
             ]
           },
           {

@@ -1,0 +1,130 @@
+---
+title: useSubscribeToCategorySamples
+description: React Hook for subscribing to category sample changes with automatic cleanup
+icon: bell
+---
+
+Automatic subscription to category sample changes with React lifecycle management.
+
+## Hook signature
+
+```typescript
+function useSubscribeToCategorySamples<TIdentifier extends CategoryTypeIdentifier>(
+  identifier: TIdentifier,
+  onChange: (args: OnCategorySamplesCallback<TIdentifier>) => void
+): void
+```
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The category type to subscribe to (e.g., `'HKCategoryTypeIdentifierSleepAnalysis'`)
+</ParamField>
+
+<ParamField path="onChange" type="OnCategorySamplesCallback" required>
+  Callback function invoked when new category samples are available
+  
+  <Expandable title="OnCategorySamplesCallback properties">
+    <ParamField path="samples" type="CategorySample[]">
+      Array of new category samples
+    </ParamField>
+    
+    <ParamField path="deletedSamples" type="DeletedSample[]">
+      Array of deleted samples (if applicable)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+### Subscribe to sleep analysis
+
+```typescript
+import { useSubscribeToCategorySamples } from '@kingstinct/react-native-healthkit';
+
+function SleepTracker() {
+  const [sleepSessions, setSleepSessions] = useState<CategorySample[]>([]);
+
+  useSubscribeToCategorySamples(
+    'HKCategoryTypeIdentifierSleepAnalysis',
+    ({ samples }) => {
+      setSleepSessions(prev => [...samples, ...prev]);
+    }
+  );
+
+  return (
+    <View>
+      <Text>Recent Sleep Sessions: {sleepSessions.length}</Text>
+    </View>
+  );
+}
+```
+
+### Subscribe to mindful sessions
+
+```typescript
+import { useSubscribeToCategorySamples } from '@kingstinct/react-native-healthkit';
+
+function MindfulnessTracker() {
+  const [sessions, setSessions] = useState<number>(0);
+
+  useSubscribeToCategorySamples(
+    'HKCategoryTypeIdentifierMindfulSession',
+    ({ samples }) => {
+      setSessions(prev => prev + samples.length);
+    }
+  );
+
+  return <Text>Mindfulness sessions today: {sessions}</Text>;
+}
+```
+
+### Handle deleted samples
+
+```typescript
+import { useSubscribeToCategorySamples } from '@kingstinct/react-native-healthkit';
+
+function SymptomsLog() {
+  const [symptoms, setSymptoms] = useState<CategorySample[]>([]);
+
+  useSubscribeToCategorySamples(
+    'HKCategoryTypeIdentifierAbdominalCramps',
+    ({ samples, deletedSamples }) => {
+      setSymptoms(prev => {
+        // Remove deleted samples
+        let updated = prev.filter(
+          s => !deletedSamples.some(d => d.uuid === s.uuid)
+        );
+        // Add new samples
+        return [...samples, ...updated];
+      });
+    }
+  );
+
+  return <Text>Logged symptoms: {symptoms.length}</Text>;
+}
+```
+
+## Features
+
+- **Automatic cleanup** - Subscription is removed when component unmounts
+- **Stable callback** - Uses ref to avoid re-subscribing on callback changes
+- **Type-safe** - Full TypeScript support with category-specific types
+- **Deletion tracking** - Receive notifications when samples are deleted
+- **Background updates** - Works with background delivery when enabled
+
+## Notes
+
+<Warning>
+  Request authorization before using this hook, otherwise your app will crash.
+</Warning>
+
+<Tip>
+  Use this hook for real-time updates. For one-time queries, use
+  `queryCategorySamples` instead.
+</Tip>
+
+## Related APIs
+
+- [useSubscribeToChanges](/api/hooks/use-subscribe-to-changes) - Generic change subscription
+- [useSubscribeToQuantitySamples](/api/hooks/use-subscribe-to-quantity-samples) - Quantity sample subscription
+- [subscribeToCategorySamples](/guides/subscriptions) - Imperative subscription API
+- [enableBackgroundDelivery](/api/core/background-delivery) - Enable background updates

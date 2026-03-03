@@ -1,0 +1,148 @@
+---
+title: Get most recent samples
+description: Utility functions for fetching the most recent health data sample
+icon: clock
+---
+
+Convenience functions to quickly retrieve the most recent sample of a specific data type.
+
+## getMostRecentQuantitySample
+
+Get the most recent quantity sample for a specific identifier.
+
+```typescript
+function getMostRecentQuantitySample(
+  identifier: QuantityTypeIdentifier,
+  unit?: string
+): Promise<QuantitySample | undefined>
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type identifier
+</ParamField>
+
+<ParamField path="unit" type="string">
+  Optional unit for the quantity. If not specified, uses the user's preferred unit.
+</ParamField>
+
+**Returns:** `Promise<QuantitySample | undefined>` - The most recent sample, or `undefined` if no data exists
+
+### Example
+
+```typescript
+import { getMostRecentQuantitySample } from '@kingstinct/react-native-healthkit';
+
+// Get most recent step count
+const steps = await getMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierStepCount'
+);
+
+if (steps) {
+  console.log(`Steps: ${steps.quantity} ${steps.unit}`);
+}
+
+// Get heart rate in specific unit
+const heartRate = await getMostRecentQuantitySample(
+  'HKQuantityTypeIdentifierHeartRate',
+  'count/min'
+);
+```
+
+## getMostRecentCategorySample
+
+Get the most recent category sample for a specific identifier.
+
+```typescript
+function getMostRecentCategorySample<T extends CategoryTypeIdentifier>(
+  identifier: T
+): Promise<CategorySampleTyped<T> | undefined>
+```
+
+<ParamField path="identifier" type="CategoryTypeIdentifier" required>
+  The category type identifier
+</ParamField>
+
+**Returns:** `Promise<CategorySample | undefined>` - The most recent sample, or `undefined` if no data exists
+
+### Example
+
+```typescript
+import { getMostRecentCategorySample } from '@kingstinct/react-native-healthkit';
+
+// Get most recent sleep session
+const sleep = await getMostRecentCategorySample(
+  'HKCategoryTypeIdentifierSleepAnalysis'
+);
+
+if (sleep) {
+  console.log(`Sleep value: ${sleep.value}`);
+  console.log(`Duration: ${sleep.endDate - sleep.startDate}ms`);
+}
+
+// Get most recent mindful session
+const mindful = await getMostRecentCategorySample(
+  'HKCategoryTypeIdentifierMindfulSession'
+);
+```
+
+## getMostRecentWorkout
+
+Get the most recent workout sample.
+
+```typescript
+function getMostRecentWorkout(): Promise<WorkoutSample | undefined>
+```
+
+**Returns:** `Promise<WorkoutSample | undefined>` - The most recent workout, or `undefined` if no workouts exist
+
+### Example
+
+```typescript
+import { getMostRecentWorkout } from '@kingstinct/react-native-healthkit';
+
+const workout = await getMostRecentWorkout();
+
+if (workout) {
+  console.log(`Activity: ${workout.workoutActivityType}`);
+  console.log(`Duration: ${workout.duration} seconds`);
+  console.log(`Distance: ${workout.totalDistance?.quantity} ${workout.totalDistance?.unit}`);
+  console.log(`Energy: ${workout.totalEnergyBurned?.quantity} ${workout.totalEnergyBurned?.unit}`);
+  
+  // Access workout methods
+  const routes = await workout.getWorkoutRoutes();
+}
+```
+
+## Use cases
+
+These utilities are perfect for:
+
+- **Dashboard displays** - Show current health metrics
+- **Quick checks** - Verify if data exists before complex queries
+- **Status indicators** - Display most recent values
+- **Initial data loading** - Fetch latest value on app start
+
+## React Hooks alternative
+
+For reactive data that auto-updates, use these hooks instead:
+
+- [useMostRecentQuantitySample](/api/hooks/use-most-recent-quantity-sample)
+- [useMostRecentCategorySample](/api/hooks/use-most-recent-category-sample)
+- [useMostRecentWorkout](/api/hooks/use-most-recent-workout)
+
+## Notes
+
+<Tip>
+  These functions are thin wrappers around query functions with `limit: 1` and
+  descending sort order. Use the full query APIs for more control.
+</Tip>
+
+<Note>
+  Always request authorization before calling these functions.
+</Note>
+
+## Related APIs
+
+- [queryQuantitySamples](/api/quantity/query-samples)
+- [queryCategorySamples](/api/category/query-samples)
+- [queryWorkoutSamples](/api/workouts/query)

@@ -1,0 +1,105 @@
+---
+title: useSubscribeToQuantitySamples
+description: React Hook for subscribing to quantity sample changes with automatic cleanup
+icon: bell
+---
+
+Automatic subscription to quantity sample changes with React lifecycle management.
+
+## Hook signature
+
+```typescript
+function useSubscribeToQuantitySamples<TIdentifier extends QuantityTypeIdentifier>(
+  identifier: TIdentifier,
+  onChange: (args: OnQuantitySamplesCallback) => void
+): void
+```
+
+<ParamField path="identifier" type="QuantityTypeIdentifier" required>
+  The quantity type to subscribe to (e.g., `'HKQuantityTypeIdentifierStepCount'`)
+</ParamField>
+
+<ParamField path="onChange" type="OnQuantitySamplesCallback" required>
+  Callback function invoked when new quantity samples are available
+  
+  <Expandable title="OnQuantitySamplesCallback properties">
+    <ParamField path="samples" type="QuantitySample[]">
+      Array of new quantity samples
+    </ParamField>
+    
+    <ParamField path="deletedSamples" type="DeletedSample[]">
+      Array of deleted samples (if applicable)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+### Subscribe to step count changes
+
+```typescript
+import { useSubscribeToQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+function StepCounter() {
+  const [steps, setSteps] = useState<number>(0);
+
+  useSubscribeToQuantitySamples(
+    'HKQuantityTypeIdentifierStepCount',
+    ({ samples }) => {
+      const totalSteps = samples.reduce((sum, sample) => sum + sample.quantity, 0);
+      setSteps(prev => prev + totalSteps);
+    }
+  );
+
+  return <Text>Total Steps: {steps}</Text>;
+}
+```
+
+### Subscribe to heart rate with processing
+
+```typescript
+import { useSubscribeToQuantitySamples } from '@kingstinct/react-native-healthkit';
+
+function HeartRateMonitor() {
+  const [heartRates, setHeartRates] = useState<number[]>([]);
+
+  useSubscribeToQuantitySamples(
+    'HKQuantityTypeIdentifierHeartRate',
+    ({ samples }) => {
+      const newRates = samples.map(s => s.quantity);
+      setHeartRates(prev => [...prev, ...newRates].slice(-100)); // Keep last 100
+    }
+  );
+
+  const averageHR = heartRates.length > 0
+    ? heartRates.reduce((a, b) => a + b, 0) / heartRates.length
+    : 0;
+
+  return <Text>Average HR: {averageHR.toFixed(0)} bpm</Text>;
+}
+```
+
+## Features
+
+- **Automatic cleanup** - Subscription is removed when component unmounts
+- **Stable callback** - Uses ref to avoid re-subscribing on callback changes
+- **Type-safe** - Full TypeScript support with inferred sample types
+- **Background updates** - Works with background delivery when enabled
+
+## Notes
+
+<Warning>
+  Request authorization before using this hook, otherwise your app will crash.
+</Warning>
+
+<Tip>
+  Enable background delivery for this data type to receive updates when your app
+  isn't in the foreground.
+</Tip>
+
+## Related APIs
+
+- [useSubscribeToChanges](/api/hooks/use-subscribe-to-changes) - Generic change subscription
+- [useSubscribeToCategorySamples](/api/hooks/use-subscribe-to-category-samples) - Category sample subscription
+- [subscribeToQuantitySamples](/guides/subscriptions) - Imperative subscription API
+- [enableBackgroundDelivery](/api/core/background-delivery) - Enable background updates
